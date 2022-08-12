@@ -99,10 +99,14 @@ func plainDnsRequest(c *cli.Context) error {
 	domainName := dns.Fqdn(c.String("domain"))
 	dnsTypeString := c.String("dnstype")
 	dnsTargetServer := c.String("target")
+	dnssec := c.Bool("dnssec")
 	dnsType := dnsQueryStringToType(dnsTypeString)
 
 	dnsQuery := new(dns.Msg)
 	dnsQuery.SetQuestion(domainName, dnsType)
+	if dnssec {
+		dnsQuery.SetEdns0(4096, true)
+	}
 	packedDnsQuery, err := dnsQuery.Pack()
 	if err != nil {
 		return err

@@ -22,6 +22,9 @@ var Commands = []cli.Command{
 				Name:  "target",
 				Value: "localhost:8080",
 			},
+			cli.BoolFlag{
+				Name: "dnssec",
+			},
 		},
 	},
 	{
