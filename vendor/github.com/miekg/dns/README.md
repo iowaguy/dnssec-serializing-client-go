@@ -69,6 +69,15 @@ A not-so-up-to-date-list-that-may-be-actually-current:
 * https://zonedb.org/
 * https://router7.org/
 * https://github.com/fortio/dnsping
+* https://github.com/Luzilla/dnsbl_exporter
+* https://github.com/bodgit/tsig
+* https://github.com/v2fly/v2ray-core (test only)
+* https://kuma.io/
+* https://www.misaka.io/services/dns
+* https://ping.sx/dig
+* https://fleetdeck.io/
+* https://github.com/markdingo/autoreverse
+
 
 Send pull request if you want to be listed here.
 
@@ -96,13 +105,13 @@ DNS Authors 2012-
 This library uses Go modules and uses semantic versioning. Building is done with the `go` tool, so
 the following should work:
 
-    go get github.com/miekg/dns
-    go build github.com/miekg/dns
+    go get github.com/iowaguy/dns
+    go build github.com/iowaguy/dns
 
 ## Examples
 
 A short "how to use the API" is at the beginning of doc.go (this also will show when you call `godoc
-github.com/miekg/dns`).
+github.com/iowaguy/dns`).
 
 Example programs can be found in the `github.com/miekg/exdns` repository.
 
@@ -165,6 +174,9 @@ Example programs can be found in the `github.com/miekg/exdns` repository.
 * 7873 - Domain Name System (DNS) Cookies
 * 8080 - EdDSA for DNSSEC
 * 8499 - DNS Terminology
+* 8659 - DNS Certification Authority Authorization (CAA) Resource Record
+* 8914 - Extended DNS Errors
+* 8976 - Message Digest for DNS Zones (ZONEMD RR)
 
 ## Loosely Based Upon
 

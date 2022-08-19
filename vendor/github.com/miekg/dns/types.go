@@ -24,79 +24,81 @@ type (
 const (
 	// valid RR_Header.Rrtype and Question.qtype
 
-	TypeNone       uint16 = 0
-	TypeA          uint16 = 1
-	TypeNS         uint16 = 2
-	TypeMD         uint16 = 3
-	TypeMF         uint16 = 4
-	TypeCNAME      uint16 = 5
-	TypeSOA        uint16 = 6
-	TypeMB         uint16 = 7
-	TypeMG         uint16 = 8
-	TypeMR         uint16 = 9
-	TypeNULL       uint16 = 10
-	TypePTR        uint16 = 12
-	TypeHINFO      uint16 = 13
-	TypeMINFO      uint16 = 14
-	TypeMX         uint16 = 15
-	TypeTXT        uint16 = 16
-	TypeRP         uint16 = 17
-	TypeAFSDB      uint16 = 18
-	TypeX25        uint16 = 19
-	TypeISDN       uint16 = 20
-	TypeRT         uint16 = 21
-	TypeNSAPPTR    uint16 = 23
-	TypeSIG        uint16 = 24
-	TypeKEY        uint16 = 25
-	TypePX         uint16 = 26
-	TypeGPOS       uint16 = 27
-	TypeAAAA       uint16 = 28
-	TypeLOC        uint16 = 29
-	TypeNXT        uint16 = 30
-	TypeEID        uint16 = 31
-	TypeNIMLOC     uint16 = 32
-	TypeSRV        uint16 = 33
-	TypeATMA       uint16 = 34
-	TypeNAPTR      uint16 = 35
-	TypeKX         uint16 = 36
-	TypeCERT       uint16 = 37
-	TypeDNAME      uint16 = 39
-	TypeOPT        uint16 = 41 // EDNS
-	TypeAPL        uint16 = 42
-	TypeDS         uint16 = 43
-	TypeSSHFP      uint16 = 44
-	TypeRRSIG      uint16 = 46
-	TypeNSEC       uint16 = 47
-	TypeDNSKEY     uint16 = 48
-	TypeDHCID      uint16 = 49
-	TypeNSEC3      uint16 = 50
-	TypeNSEC3PARAM uint16 = 51
-	TypeTLSA       uint16 = 52
-	TypeSMIMEA     uint16 = 53
-	TypeHIP        uint16 = 55
-	TypeNINFO      uint16 = 56
-	TypeRKEY       uint16 = 57
-	TypeTALINK     uint16 = 58
-	TypeCDS        uint16 = 59
-	TypeCDNSKEY    uint16 = 60
-	TypeOPENPGPKEY uint16 = 61
-	TypeCSYNC      uint16 = 62
-	TypeSVCB       uint16 = 64
-	TypeHTTPS      uint16 = 65
-	TypeSPF        uint16 = 99
-	TypeUINFO      uint16 = 100
-	TypeUID        uint16 = 101
-	TypeGID        uint16 = 102
-	TypeUNSPEC     uint16 = 103
-	TypeNID        uint16 = 104
-	TypeL32        uint16 = 105
-	TypeL64        uint16 = 106
-	TypeLP         uint16 = 107
-	TypeEUI48      uint16 = 108
-	TypeEUI64      uint16 = 109
-	TypeURI        uint16 = 256
-	TypeCAA        uint16 = 257
-	TypeAVC        uint16 = 258
+	TypeNone        uint16 = 0
+	TypeA           uint16 = 1
+	TypeNS          uint16 = 2
+	TypeMD          uint16 = 3
+	TypeMF          uint16 = 4
+	TypeCNAME       uint16 = 5
+	TypeSOA         uint16 = 6
+	TypeMB          uint16 = 7
+	TypeMG          uint16 = 8
+	TypeMR          uint16 = 9
+	TypeNULL        uint16 = 10
+	TypePTR         uint16 = 12
+	TypeHINFO       uint16 = 13
+	TypeMINFO       uint16 = 14
+	TypeMX          uint16 = 15
+	TypeTXT         uint16 = 16
+	TypeRP          uint16 = 17
+	TypeAFSDB       uint16 = 18
+	TypeX25         uint16 = 19
+	TypeISDN        uint16 = 20
+	TypeRT          uint16 = 21
+	TypeNSAPPTR     uint16 = 23
+	TypeSIG         uint16 = 24
+	TypeKEY         uint16 = 25
+	TypePX          uint16 = 26
+	TypeGPOS        uint16 = 27
+	TypeAAAA        uint16 = 28
+	TypeLOC         uint16 = 29
+	TypeNXT         uint16 = 30
+	TypeEID         uint16 = 31
+	TypeNIMLOC      uint16 = 32
+	TypeSRV         uint16 = 33
+	TypeATMA        uint16 = 34
+	TypeNAPTR       uint16 = 35
+	TypeKX          uint16 = 36
+	TypeCERT        uint16 = 37
+	TypeDNAME       uint16 = 39
+	TypeOPT         uint16 = 41 // EDNS
+	TypeAPL         uint16 = 42
+	TypeDS          uint16 = 43
+	TypeSSHFP       uint16 = 44
+	TypeRRSIG       uint16 = 46
+	TypeNSEC        uint16 = 47
+	TypeDNSKEY      uint16 = 48
+	TypeDHCID       uint16 = 49
+	TypeNSEC3       uint16 = 50
+	TypeNSEC3PARAM  uint16 = 51
+	TypeTLSA        uint16 = 52
+	TypeSMIMEA      uint16 = 53
+	TypeHIP         uint16 = 55
+	TypeNINFO       uint16 = 56
+	TypeRKEY        uint16 = 57
+	TypeTALINK      uint16 = 58
+	TypeCDS         uint16 = 59
+	TypeCDNSKEY     uint16 = 60
+	TypeOPENPGPKEY  uint16 = 61
+	TypeCSYNC       uint16 = 62
+	TypeZONEMD      uint16 = 63
+	TypeSVCB        uint16 = 64
+	TypeHTTPS       uint16 = 65
+	TypeSPF         uint16 = 99
+	TypeUINFO       uint16 = 100
+	TypeUID         uint16 = 101
+	TypeGID         uint16 = 102
+	TypeUNSPEC      uint16 = 103
+	TypeNID         uint16 = 104
+	TypeL32         uint16 = 105
+	TypeL64         uint16 = 106
+	TypeLP          uint16 = 107
+	TypeEUI48       uint16 = 108
+	TypeEUI64       uint16 = 109
+	TypeDNSSECProof uint16 = 110
+	TypeURI         uint16 = 256
+	TypeCAA         uint16 = 257
+	TypeAVC         uint16 = 258
 
 	TypeTKEY uint16 = 249
 	TypeTSIG uint16 = 250
@@ -148,6 +150,14 @@ const (
 	OpcodeStatus = 2
 	OpcodeNotify = 4
 	OpcodeUpdate = 5
+)
+
+// Used in ZONEMD https://tools.ietf.org/html/rfc8976
+const (
+	ZoneMDSchemeSimple = 1
+
+	ZoneMDHashAlgSHA384 = 1
+	ZoneMDHashAlgSHA512 = 2
 )
 
 // Header is the wire format for the DNS packet header.
@@ -245,8 +255,8 @@ type ANY struct {
 
 func (rr *ANY) String() string { return rr.Hdr.String() }
 
-func (rr *ANY) parse(c *zlexer, origin string) *ParseError {
-	panic("dns: internal error: parse should never be called on ANY")
+func (*ANY) parse(c *zlexer, origin string) *ParseError {
+	return &ParseError{err: "ANY records do not have a presentation format"}
 }
 
 // NULL RR. See RFC 1035.
@@ -260,8 +270,8 @@ func (rr *NULL) String() string {
 	return ";" + rr.Hdr.String() + rr.Data
 }
 
-func (rr *NULL) parse(c *zlexer, origin string) *ParseError {
-	panic("dns: internal error: parse should never be called on NULL")
+func (*NULL) parse(c *zlexer, origin string) *ParseError {
+	return &ParseError{err: "NULL records do not have a presentation format"}
 }
 
 // CNAME RR. See RFC 1034.
@@ -1361,6 +1371,23 @@ func (rr *CSYNC) len(off int, compression map[string]struct{}) int {
 	return l
 }
 
+// ZONEMD RR, from draft-ietf-dnsop-dns-zone-digest
+type ZONEMD struct {
+	Hdr    RR_Header
+	Serial uint32
+	Scheme uint8
+	Hash   uint8
+	Digest string `dns:"hex"`
+}
+
+func (rr *ZONEMD) String() string {
+	return rr.Hdr.String() +
+		strconv.Itoa(int(rr.Serial)) +
+		" " + strconv.Itoa(int(rr.Scheme)) +
+		" " + strconv.Itoa(int(rr.Hash)) +
+		" " + rr.Digest
+}
+
 // APL RR. See RFC 3123.
 type APL struct {
 	Hdr      RR_Header
@@ -1387,13 +1414,13 @@ func (rr *APL) String() string {
 }
 
 // str returns presentation form of the APL prefix.
-func (p *APLPrefix) str() string {
+func (a *APLPrefix) str() string {
 	var sb strings.Builder
-	if p.Negation {
+	if a.Negation {
 		sb.WriteByte('!')
 	}
 
-	switch len(p.Network.IP) {
+	switch len(a.Network.IP) {
 	case net.IPv4len:
 		sb.WriteByte('1')
 	case net.IPv6len:
@@ -1402,20 +1429,20 @@ func (p *APLPrefix) str() string {
 
 	sb.WriteByte(':')
 
-	switch len(p.Network.IP) {
+	switch len(a.Network.IP) {
 	case net.IPv4len:
-		sb.WriteString(p.Network.IP.String())
+		sb.WriteString(a.Network.IP.String())
 	case net.IPv6len:
 		// add prefix for IPv4-mapped IPv6
-		if v4 := p.Network.IP.To4(); v4 != nil {
+		if v4 := a.Network.IP.To4(); v4 != nil {
 			sb.WriteString("::ffff:")
 		}
-		sb.WriteString(p.Network.IP.String())
+		sb.WriteString(a.Network.IP.String())
 	}
 
 	sb.WriteByte('/')
 
-	prefix, _ := p.Network.Mask.Size()
+	prefix, _ := a.Network.Mask.Size()
 	sb.WriteString(strconv.Itoa(prefix))
 
 	return sb.String()
@@ -1429,17 +1456,17 @@ func (a *APLPrefix) equals(b *APLPrefix) bool {
 }
 
 // copy returns a copy of the APL prefix.
-func (p *APLPrefix) copy() APLPrefix {
+func (a *APLPrefix) copy() APLPrefix {
 	return APLPrefix{
-		Negation: p.Negation,
-		Network:  copyNet(p.Network),
+		Negation: a.Negation,
+		Network:  copyNet(a.Network),
 	}
 }
 
 // len returns size of the prefix in wire format.
-func (p *APLPrefix) len() int {
+func (a *APLPrefix) len() int {
 	// 4-byte header and the network address prefix (see Section 4 of RFC 3123)
-	prefix, _ := p.Network.Mask.Size()
+	prefix, _ := a.Network.Mask.Size()
 	return 4 + (prefix+7)/8
 }
 
@@ -1472,7 +1499,7 @@ func StringToTime(s string) (uint32, error) {
 
 // saltToString converts a NSECX salt to uppercase and returns "-" when it is empty.
 func saltToString(s string) string {
-	if len(s) == 0 {
+	if s == "" {
 		return "-"
 	}
 	return strings.ToUpper(s)
