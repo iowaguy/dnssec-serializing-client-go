@@ -42,7 +42,7 @@ func buildURL(s, defaultPath string) *url.URL {
 	if err != nil {
 		log.Fatalf("failed to parse url: %v", err)
 	}
-	if u.Path == "" {
+	if u.Path == "" || u.Path == "/" {
 		u.Path = defaultPath
 	}
 	return u

@@ -2,26 +2,22 @@ package commands
 
 import (
 	"bytes"
-	"crypto/tls"
-	"crypto/x509"
 	"encoding/base64"
-	"encoding/hex"
-	"errors"
 	"fmt"
+	odoh "github.com/cloudflare/odoh-go"
+	"github.com/miekg/dns"
+	"github.com/urfave/cli"
 	"io/ioutil"
 	"log"
 	"net/http"
 	"net/url"
-	"strings"
-
-	odoh "github.com/cloudflare/odoh-go"
-	"github.com/miekg/dns"
-	"github.com/urfave/cli"
+	"time"
 )
 
 func createPlainQueryResponse(hostname string, serializedDnsQueryString []byte) (response *dns.Msg, err error) {
 	client := http.Client{}
 	queryUrl := buildDohURL(hostname).String()
+	log.Printf("Querying %v\n", queryUrl)
 	req, err := http.NewRequest(http.MethodGet, queryUrl, nil)
 	if err != nil {
 		log.Fatalln(err)
@@ -111,99 +107,24 @@ func plainDnsRequest(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
+	start := time.Now()
 
 	response, err := createPlainQueryResponse(dnsTargetServer, packedDnsQuery)
 	if err != nil {
+		fmt.Println("Failed with a response here.")
 		return err
 	}
 
-	fmt.Println(response)
-	return nil
-}
+	end := time.Now()
 
-func obliviousDnsRequest(c *cli.Context) error {
-	domainName := dns.Fqdn(c.String("domain"))
-	dnsTypeString := c.String("dnstype")
-	targetName := c.String("target")
-	proxy := c.String("proxy")
-	customCAPath := c.String("customcert")
-	configString := c.String("config")
+	fmt.Printf("%v\n", response)
 
-	var useproxy bool
-	if len(proxy) > 0 {
-		useproxy = true
-	}
+	vStart := time.Now()
+	_, _ = ValidateDNSSECSignature(response)
+	vEnd := time.Now()
+	fmt.Printf("Network Time: %v\n", end.Sub(start).String())
+	fmt.Printf("Verification Time: %v\n", vEnd.Sub(vStart).String())
 
-	client := http.Client{}
-
-	if len(strings.TrimSpace(customCAPath)) != 0 {
-		customCAPool := x509.NewCertPool()
-
-		rootCA, err := ioutil.ReadFile(customCAPath)
-		if err != nil {
-			log.Fatalf("Error reading custom certificate : %v", err)
-		}
-		customCAPool.AppendCertsFromPEM(rootCA)
-		log.Println("Custom Trusted CA Certificates loaded")
-		tlsConfiguredTransport := &http.Transport{
-			TLSClientConfig: &tls.Config{RootCAs: customCAPool},
-		}
-		client.Transport = tlsConfiguredTransport
-	}
-	var odohConfigs odoh.ObliviousDoHConfigs
-	var err error
-	if len(strings.TrimSpace(configString)) == 0 {
-		odohConfigs, err = fetchTargetConfigs(targetName)
-		if err != nil {
-			return err
-		}
-		if len(odohConfigs.Configs) == 0 {
-			err := errors.New("target provided no valid odoh configs")
-			fmt.Println(err)
-			return err
-		}
-	} else {
-		configBytes, err := hex.DecodeString(configString)
-		if err != nil {
-			return err
-		}
-		odohConfigs, err = odoh.UnmarshalObliviousDoHConfigs(configBytes)
-		if err != nil {
-			return err
-		}
-	}
-	odohConfig := odohConfigs.Configs[0]
-
-	dnsType := dnsQueryStringToType(dnsTypeString)
-
-	dnsQuery := new(dns.Msg)
-	dnsQuery.SetQuestion(domainName, dnsType)
-	packedDnsQuery, err := dnsQuery.Pack()
-	if err != nil {
-		fmt.Println(err)
-		return err
-	}
-
-	odohQuery, queryContext, err := createOdohQuestion(packedDnsQuery, odohConfig.Contents)
-	if err != nil {
-		fmt.Println(err)
-		return err
-	}
-
-
-	odohMessage, err := resolveObliviousQuery(odohQuery, useproxy, targetName, proxy, &client)
-	if err != nil {
-		fmt.Println(err)
-		return err
-	}
-
-	dnsResponse, err := validateEncryptedResponse(odohMessage, queryContext)
-	if err != nil {
-		fmt.Println(err)
-		return err
-	}
-
-	fmt.Println(dnsResponse)
 	return nil
 }
 

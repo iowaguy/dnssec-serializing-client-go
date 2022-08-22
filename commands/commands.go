@@ -28,41 +28,6 @@ var Commands = []cli.Command{
 		},
 	},
 	{
-		Name:   "odoh",
-		Usage:  "An application/oblivious-dns-message request",
-		Action: obliviousDnsRequest,
-		Flags: []cli.Flag{
-			cli.StringFlag{
-				Name:  "domain, d",
-				Value: "www.cloudflare.com.",
-				Usage: "Domain name which needs to be resolved. Use trailing period (.).",
-			},
-			cli.StringFlag{
-				Name:  "dnstype, t",
-				Value: "AAAA",
-				Usage: "Type of DNS Question. Currently supports A, AAAA, CAA, CNAME",
-			},
-			cli.StringFlag{
-				Name:  "target",
-				Value: "localhost:8080",
-				Usage: "Hostname:Port format declaration of the target resolver hostname",
-			},
-			cli.StringFlag{
-				Name:  "proxy, p",
-				Usage: "Hostname:Port format declaration of the proxy hostname",
-			},
-			cli.StringFlag{
-				Name: "customcert, cc",
-				Usage: "Use --customcert to indicate the path to the custom certificates if using localhost certs",
-				Value: "",
-			},
-			cli.StringFlag{
-				Name:  "config, c",
-				Usage: "ODoHConfigs to use for the query, encoded as a hexadecimal string",
-			},
-		},
-	},
-	{
 		Name:   "odohconfig-fetch",
 		Usage:  "Retrieves the ObliviousDoHConfigs of the target resolver",
 		Action: getTargetConfigs,
