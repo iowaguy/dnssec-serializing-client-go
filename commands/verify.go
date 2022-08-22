@@ -27,34 +27,36 @@ func convertSignatureToRrsig(signature dns.Signature, signatureTypeCovered uint1
 	return r
 }
 
-func DNSKEYsToRR(keys []dns.DNSKEY) []dns.RR {
-	r := make([]dns.RR, 0)
-	for _, k := range keys {
-		rr, err := dns.NewRR(k.String())
-		if err != nil {
-			fmt.Println("Failed to create RR from DNSKEY.")
-		}
-		r = append(r, rr)
+func convertKeyToDNSKEY(key dns.Key, name dns.Name) *dns.DNSKEY {
+	return &dns.DNSKEY{
+		Hdr: dns.RR_Header{
+			Name: name.String(),
+			Rrtype: dns.TypeDNSKEY,
+			Class: dns.ClassINET,
+		},
+		Protocol: key.Protocol,
+		Algorithm: key.Algorithm,
+
+		// FIXME Looks like the PK is []byte() type casted from String
+		PublicKey: string(key.Public_key),
+		Flags: key.Flags,
 	}
-	return r
 }
 
 func SerialDStoDSRR(dsRecords []dns.SerialDS) []dns.RR {
 	r := make([]dns.RR, 0)
 	for _, dsRecord := range dsRecords {
-		record := new(dns.DS)
-		record.Algorithm = dsRecord.Algorithm
-		record.KeyTag = dsRecord.Key_tag
-		record.Digest = string(dsRecord.Digest)
-		record.DigestType = dsRecord.Digest_type
-		record.Hdr.Rrtype = dns.TypeDS
-		record.Hdr.Class = dns.ClassINET
-		fmt.Println(record.String())
-		RRValue, err := dns.NewRR(record.String())
-		if err != nil {
-			fmt.Println("Failed to convert DS entry to RR")
+		record := &dns.DS{
+			Hdr: dns.RR_Header{
+				Rrtype: dns.TypeDS,
+				Class: dns.ClassINET,
+			},
+			Algorithm: dsRecord.Algorithm,
+			KeyTag: dsRecord.Key_tag,
+			Digest: string(dsRecord.Digest),
+			DigestType: dsRecord.Digest_type,
 		}
-		r = append(r, RRValue)
+		r = append(r, record)
 	}
 	return r
 }
@@ -68,24 +70,16 @@ func verifyDNSSECProofChain(chain *dns.DNSSECProof) (bool, error) {
 	}
 	// Transition to the ENTERING state
 	fmt.Printf("Number of Zones: %v\n", int(chain.Num_zones))
+	prevZoneName := ""
 	for i := 0; i < int(chain.Num_zones); i++ {
 		zone := chain.Zones[i]
 		zoneKeySignature := convertSignatureToRrsig(zone.Entry.Key_sig, dns.TypeDNSKEY)
-		dnsKeys := make([]dns.DNSKEY, 0)
+		dnsKeys := make([]dns.RR, 0)
 		keyLookupMap := make(map[uint16]*dns.DNSKEY)
 		for _, key := range zone.Entry.Keys {
-			dnsKey := new(dns.DNSKEY)
-			var dnsKeyBytes []byte
-			_, _ = dns.PackRR(&key, dnsKeyBytes, 0, nil, false)
-			fmt.Printf("Temp Key: %v\n", dnsKeyBytes)
-
-			dnsKey.Protocol = key.Protocol
-			dnsKey.Algorithm = key.Algorithm
-			dnsKey.PublicKey = string(key.Public_key) // Looks like the PK is []byte() type casted from String
-			dnsKey.Flags = key.Flags
-			dnsKey.Hdr.Rrtype = dns.TypeDNSKEY
-			dnsKey.Hdr.Class = dns.ClassINET
-			dnsKeys = append(dnsKeys, *dnsKey)
+			dnsKey := convertKeyToDNSKEY(key, dns.Name(prevZoneName))
+			log.Printf(dnsKey.String())
+			dnsKeys = append(dnsKeys, dnsKey)
 			fmt.Printf("\tInserting Key with ID %v\n", dnsKey.KeyTag())
 			keyLookupMap[dnsKey.KeyTag()] = dnsKey
 			//fmt.Printf("Zone Entry Key [%v] : %v\n", j, key.String())
@@ -96,9 +90,10 @@ func verifyDNSSECProofChain(chain *dns.DNSSECProof) (bool, error) {
 			//fmt.Printf("\tKey [%v] Length: %v\n", j, key.Length)
 			//fmt.Printf("\tKey [%v] KeyTag: %v\n", j, dnsKey.KeyTag())
 		}
+
 		fmt.Printf("Looking up key for %v\n", zoneKeySignature.KeyTag)
 		//KSK := uint16(257)
-		err := zoneKeySignature.Verify(keyLookupMap[zoneKeySignature.KeyTag], DNSKEYsToRR(dnsKeys))
+		err := zoneKeySignature.Verify(keyLookupMap[zoneKeySignature.KeyTag], dnsKeys)
 		if err == nil {
 			fmt.Printf("\tVerified DNSKEY Records at zone %v\n", i)
 		} else {
@@ -106,15 +101,19 @@ func verifyDNSSECProofChain(chain *dns.DNSSECProof) (bool, error) {
 		}
 
 		if zone.Exit.Num_ds > 0 {
-			dsSignature := convertSignatureToRrsig(zone.Exit.Rrsig, zone.Exit.Rrsig.Header().Rrtype)
+			dsSignature := convertSignatureToRrsig(zone.Exit.Rrsig, dns.TypeDS)
+			dsSignature.SignerName = prevZoneName
 			fmt.Printf("Sig: %v\n", dsSignature.String())
 			dsRR := SerialDStoDSRR(zone.Exit.Ds_records)
 			fmt.Printf("Looking up key for %v\n", dsSignature.KeyTag)
+			k := keyLookupMap[dsSignature.KeyTag]
+			fmt.Printf("key tag: %d\n", k.KeyTag())
 			err = dsSignature.Verify(keyLookupMap[dsSignature.KeyTag], dsRR)
 			if err == nil {
 				fmt.Printf("\tVerified DS Records")
 			} else {
 				fmt.Printf("DS Verification err: %v\n", err)
+				return false, err
 			}
 		} else {
 			// This could be a final record.
@@ -134,6 +133,7 @@ func verifyDNSSECProofChain(chain *dns.DNSSECProof) (bool, error) {
 			}
 		}
 
+		prevZoneName = zone.Exit.Next_name.String()
 		//fmt.Printf("DS : %v\n", zone.Exit.Ds_records)
 		//fmt.Printf("%v -->Next--> %v %v\n", i, nextName, zone.Exit)
 	}
