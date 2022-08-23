@@ -124,8 +124,12 @@ func plainDnsRequest(c *cli.Context) error {
 	if ok {
 		fmt.Printf("%v Verified DNSSEC Chain successfully. %v\n", "\033[32m", "\033[0m")
 	} else {
-		fmt.Printf("%v Failed DNSSEC Verification. %v\n", "\033[31m", "\033[0m")
-		fmt.Printf("Error: %v\n", err)
+		if err != nil {
+			fmt.Printf("%v Failed DNSSEC Verification. %v\n", "\033[31m", "\033[0m")
+			fmt.Printf("Error: %v\n", err)
+		} else {
+			fmt.Printf("%v Domain is not DNSSEC Enabled. %v\n", "\033[33m", "\033[0m")
+		}
 	}
 	vEnd := time.Now()
 	fmt.Printf("Network Time: %v\n", end.Sub(start).String())
