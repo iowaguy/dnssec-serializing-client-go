@@ -20,14 +20,15 @@ const (
 )
 
 type Signature struct {
-	Length    uint16
-	Algorithm uint8
-	Labels    uint8
-	Ttl       uint32
-	Expires   uint32
-	Begins    uint32
-	Key_tag   uint16
-	Signature []byte
+	Length     uint16
+	Algorithm  uint8
+	Labels     uint8
+	Ttl        uint32
+	Expires    uint32
+	Begins     uint32
+	Key_tag    uint16
+	SignerName string
+	Signature  []byte
 }
 
 type Key struct {

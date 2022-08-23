@@ -129,7 +129,11 @@ func unpackDataSignature(msg []byte, off int) (sig Signature, off1 int, err erro
 	if err != nil {
 		return sig, off, err
 	}
-
+	//signerName, off, err := unpackByteArray(msg, off, int(sig.Length)-(off-rdStart))
+	//if err != nil {
+	//	return sig, off, err
+	//}
+	//sig.SignerName = string(signerName)
 	return sig, off, nil
 }
 
