@@ -76,6 +76,10 @@ func packDataSignature(sig *Signature, msg []byte, off int, compression compress
 	if err != nil {
 		return off, err
 	}
+	//off, err = packByteArray([]byte(sig.SignerName), msg, off, compression, compress)
+	//if err != nil {
+	//	return off, err
+	//}
 
 	return off, nil
 }

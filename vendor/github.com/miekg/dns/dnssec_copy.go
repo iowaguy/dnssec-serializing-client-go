@@ -100,6 +100,7 @@ func copySignature(sig *Signature) *Signature {
 		sig.Expires,
 		sig.Begins,
 		sig.Key_tag,
+		sig.SignerName,
 		newSig,
 	}
 }

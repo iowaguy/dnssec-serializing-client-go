@@ -1,27 +1,20 @@
 package commands
 
 import (
-	"bytes"
-	"crypto/tls"
-	"crypto/x509"
 	"encoding/base64"
-	"encoding/hex"
-	"errors"
 	"fmt"
+	"github.com/miekg/dns"
+	"github.com/urfave/cli"
 	"io/ioutil"
 	"log"
 	"net/http"
-	"net/url"
-	"strings"
-
-	odoh "github.com/cloudflare/odoh-go"
-	"github.com/miekg/dns"
-	"github.com/urfave/cli"
+	"time"
 )
 
-func createPlainQueryResponse(hostname string, serializedDnsQueryString []byte) (response *dns.Msg, err error) {
+func queryDNS(hostname string, serializedDnsQueryString []byte) (response *dns.Msg, err error) {
 	client := http.Client{}
 	queryUrl := buildDohURL(hostname).String()
+	log.Printf("Querying %v\n", queryUrl)
 	req, err := http.NewRequest(http.MethodGet, queryUrl, nil)
 	if err != nil {
 		log.Fatalln(err)
@@ -50,52 +43,7 @@ func createPlainQueryResponse(hostname string, serializedDnsQueryString []byte) 
 	return dnsBytes, nil
 }
 
-func prepareHttpRequest(serializedBody []byte, useProxy bool, target string, proxy string) (req *http.Request, err error) {
-	var u *url.URL
-	if useProxy {
-		u = buildOdohProxyURL(proxy, target)
-	} else {
-		u = buildOdohTargetURL(target)
-	}
-	req, err = http.NewRequest(http.MethodPost, u.String(), bytes.NewBuffer(serializedBody))
-
-	req.Header.Set("Content-Type", OBLIVIOUS_DOH_CONTENT_TYPE)
-	req.Header.Set("Accept", OBLIVIOUS_DOH_CONTENT_TYPE)
-
-	return req, err
-}
-
-func resolveObliviousQuery(query odoh.ObliviousDNSMessage, useProxy bool, targetIP string, proxy string, client *http.Client) (response odoh.ObliviousDNSMessage, err error) {
-	serializedQuery := query.Marshal()
-	req, err := prepareHttpRequest(serializedQuery, useProxy, targetIP, proxy)
-	if err != nil {
-		return odoh.ObliviousDNSMessage{}, err
-	}
-
-	resp, err := client.Do(req)
-	if err != nil {
-		return odoh.ObliviousDNSMessage{}, err
-	}
-
-	responseHeader := resp.Header.Get("Content-Type")
-	bodyBytes, err := ioutil.ReadAll(resp.Body)
-
-	if err != nil {
-		return odoh.ObliviousDNSMessage{}, err
-	}
-	if responseHeader != OBLIVIOUS_DOH_CONTENT_TYPE {
-		return odoh.ObliviousDNSMessage{}, fmt.Errorf("Did not obtain the correct headers from %v with response %v", targetIP, string(bodyBytes))
-	}
-
-	odohQueryResponse, err := odoh.UnmarshalDNSMessage(bodyBytes)
-	if err != nil {
-		return odoh.ObliviousDNSMessage{}, err
-	}
-
-	return odohQueryResponse, nil
-}
-
-func plainDnsRequest(c *cli.Context) error {
+func SerializedDNSSECQuery(c *cli.Context) error {
 	domainName := dns.Fqdn(c.String("domain"))
 	dnsTypeString := c.String("dnstype")
 	dnsTargetServer := c.String("target")
@@ -111,112 +59,33 @@ func plainDnsRequest(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
+	start := time.Now()
 
-	response, err := createPlainQueryResponse(dnsTargetServer, packedDnsQuery)
+	response, err := queryDNS(dnsTargetServer, packedDnsQuery)
 	if err != nil {
+		fmt.Println("Failed with a response here.")
 		return err
 	}
 
-	fmt.Println(response)
-	return nil
-}
+	end := time.Now()
 
-func obliviousDnsRequest(c *cli.Context) error {
-	domainName := dns.Fqdn(c.String("domain"))
-	dnsTypeString := c.String("dnstype")
-	targetName := c.String("target")
-	proxy := c.String("proxy")
-	customCAPath := c.String("customcert")
-	configString := c.String("config")
+	fmt.Printf("%v\n", response)
 
-	var useproxy bool
-	if len(proxy) > 0 {
-		useproxy = true
-	}
-
-	client := http.Client{}
-
-	if len(strings.TrimSpace(customCAPath)) != 0 {
-		customCAPool := x509.NewCertPool()
-
-		rootCA, err := ioutil.ReadFile(customCAPath)
-		if err != nil {
-			log.Fatalf("Error reading custom certificate : %v", err)
-		}
-		customCAPool.AppendCertsFromPEM(rootCA)
-		log.Println("Custom Trusted CA Certificates loaded")
-		tlsConfiguredTransport := &http.Transport{
-			TLSClientConfig: &tls.Config{RootCAs: customCAPool},
-		}
-		client.Transport = tlsConfiguredTransport
-	}
-	var odohConfigs odoh.ObliviousDoHConfigs
-	var err error
-	if len(strings.TrimSpace(configString)) == 0 {
-		odohConfigs, err = fetchTargetConfigs(targetName)
-		if err != nil {
-			return err
-		}
-		if len(odohConfigs.Configs) == 0 {
-			err := errors.New("target provided no valid odoh configs")
-			fmt.Println(err)
-			return err
-		}
+	vStart := time.Now()
+	ok, err := ValidateDNSSECSignature(response, domainName)
+	if ok {
+		fmt.Printf("%v Verified DNSSEC Chain successfully. %v\n", "\033[32m", "\033[0m")
 	} else {
-		configBytes, err := hex.DecodeString(configString)
 		if err != nil {
-			return err
-		}
-		odohConfigs, err = odoh.UnmarshalObliviousDoHConfigs(configBytes)
-		if err != nil {
-			return err
+			fmt.Printf("%v Failed DNSSEC Verification. %v\n", "\033[31m", "\033[0m")
+			fmt.Printf("Error: %v\n", err)
+		} else {
+			fmt.Printf("%v Domain is not DNSSEC Enabled. %v\n", "\033[33m", "\033[0m")
 		}
 	}
-	odohConfig := odohConfigs.Configs[0]
+	vEnd := time.Now()
+	fmt.Printf("Network Time: %v\n", end.Sub(start).String())
+	fmt.Printf("Verification Time: %v\n", vEnd.Sub(vStart).String())
 
-	dnsType := dnsQueryStringToType(dnsTypeString)
-
-	dnsQuery := new(dns.Msg)
-	dnsQuery.SetQuestion(domainName, dnsType)
-	packedDnsQuery, err := dnsQuery.Pack()
-	if err != nil {
-		fmt.Println(err)
-		return err
-	}
-
-	odohQuery, queryContext, err := createOdohQuestion(packedDnsQuery, odohConfig.Contents)
-	if err != nil {
-		fmt.Println(err)
-		return err
-	}
-
-
-	odohMessage, err := resolveObliviousQuery(odohQuery, useproxy, targetName, proxy, &client)
-	if err != nil {
-		fmt.Println(err)
-		return err
-	}
-
-	dnsResponse, err := validateEncryptedResponse(odohMessage, queryContext)
-	if err != nil {
-		fmt.Println(err)
-		return err
-	}
-
-	fmt.Println(dnsResponse)
 	return nil
-}
-
-func validateEncryptedResponse(message odoh.ObliviousDNSMessage, queryContext odoh.QueryContext) (response *dns.Msg, err error) {
-	decryptedResponse, err := queryContext.OpenAnswer(message)
-	if err != nil {
-		return nil, err
-	}
-
-	dnsBytes, err := parseDnsResponse(decryptedResponse)
-	if err != nil {
-		return nil, err
-	}
-
-	return dnsBytes, nil
 }

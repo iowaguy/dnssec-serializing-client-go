@@ -129,11 +129,19 @@ func unpackDataSignature(msg []byte, off int) (sig Signature, off1 int, err erro
 	if err != nil {
 		return sig, off, err
 	}
-
+	//signerName, off, err := unpackByteArray(msg, off, int(sig.Length)-(off-rdStart))
+	//if err != nil {
+	//	return sig, off, err
+	//}
+	//sig.SignerName = string(signerName)
 	return sig, off, nil
 }
 
 func unpackByteArray(msg []byte, off int, length int) (b []byte, off1 int, err error) {
+	// Error handling for cases where query resolutions do not have DNSSEC Enabled
+	if length < 0 || off+length > len(msg) {
+		return nil, 0, err
+	}
 	b = make([]byte, length)
 	copy(b, msg[off:off+length])
 	return b, off + length, nil
