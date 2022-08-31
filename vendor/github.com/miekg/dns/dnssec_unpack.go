@@ -139,7 +139,10 @@ func unpackDataSignature(msg []byte, off int) (sig Signature, off1 int, err erro
 
 func unpackByteArray(msg []byte, off int, length int) (b []byte, off1 int, err error) {
 	// Error handling for cases where query resolutions do not have DNSSEC Enabled
-	if length < 0 || off+length > len(msg) {
+	if length < 0 {
+		return nil, off, err
+	}
+	if off+length > len(msg) {
 		return nil, 0, err
 	}
 	b = make([]byte, length)

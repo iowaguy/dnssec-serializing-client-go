@@ -68,7 +68,7 @@ func SerialDStoDSRR(dsRecords []dns.SerialDS, signerName string) []dns.RR {
 }
 
 func verifyDNSSECProofChain(chain *dns.DNSSECProof, query string) (bool, error) {
-	// Split query into segements
+	// Split query into segments
 	segments := strings.Split(dns.Fqdn(query), ".")
 	numSegments := len(segments)
 	// Initial state
@@ -78,18 +78,20 @@ func verifyDNSSECProofChain(chain *dns.DNSSECProof, query string) (bool, error) 
 		return false, errors.New(fmt.Sprintf("failed due to invalid initial_key_tag state."))
 	}
 	// Transition to the ENTERING state
-	fmt.Printf("Number of Zones: %v\n", int(chain.Num_zones))
+	isParentTheSigner, parentSignerIndex := false, -1
 	for i := 0; i < int(chain.Num_zones); i++ {
 		zone := chain.Zones[i]
-		zoneSignerNameBuffer := segments[numSegments-1-i : numSegments]
+		segmentStart := numSegments - 1 - i
+		if isParentTheSigner {
+			segmentStart = numSegments - 1 - parentSignerIndex
+		}
+		zoneSignerNameBuffer := segments[segmentStart:numSegments]
 		signerName := dns.Fqdn(strings.Join(zoneSignerNameBuffer, "."))
 		zoneKeySignature := convertSignatureToRrsig(zone.Entry.Key_sig, dns.TypeDNSKEY, signerName)
 		dnsKeys := make([]dns.DNSKEY, 0)
 		keyLookupMap := make(map[uint16]*dns.DNSKEY)
 		for _, key := range zone.Entry.Keys {
 			dnsKey := new(dns.DNSKEY)
-			var dnsKeyBytes []byte
-			_, _ = dns.PackRR(&key, dnsKeyBytes, 0, nil, false)
 
 			dnsKey.Protocol = key.Protocol
 			dnsKey.Algorithm = key.Algorithm
@@ -99,22 +101,10 @@ func verifyDNSSECProofChain(chain *dns.DNSSECProof, query string) (bool, error) 
 			dnsKey.Hdr.Class = dns.ClassINET
 			dnsKey.Hdr.Name = signerName
 			dnsKeys = append(dnsKeys, *dnsKey)
-			//fmt.Printf("\tInserting Key with ID %v\n", dnsKey.KeyTag())
 			keyLookupMap[dnsKey.KeyTag()] = dnsKey
-			//fmt.Printf("Zone Entry Key [%v] : %v\n", j, key.String())
-			//fmt.Printf("\tKey [%v] PK: %v\n", j, hex.EncodeToString(key.Public_key))
-			//fmt.Printf("\tKey [%v] Protocol: %v\n", j, key.Protocol)
-			//fmt.Printf("\tKey [%v] Algorithm: %v\n", j, key.Algorithm)
-			//fmt.Printf("\tKey [%v] Flags: %v\n", j, key.Flags)
-			//fmt.Printf("\tKey [%v] Length: %v\n", j, key.Length)
-			//fmt.Printf("\tKey [%v] KeyTag: %v\n", j, dnsKey.KeyTag())
 		}
-		fmt.Printf("Looking up key for %v\n", zoneKeySignature.KeyTag)
-		//KSK := uint16(257)
 		err := zoneKeySignature.Verify(keyLookupMap[zoneKeySignature.KeyTag], DNSKEYsToRR(dnsKeys))
-		if err == nil {
-			fmt.Printf("\tVerified DNSKEY Records at zone %v\n", i)
-		} else {
+		if err != nil {
 			fmt.Printf("Verification err: %v\n", err)
 			return false, err
 		}
@@ -124,31 +114,37 @@ func verifyDNSSECProofChain(chain *dns.DNSSECProof, query string) (bool, error) 
 			signerName = dns.Fqdn(strings.Join(zoneSignerNameBuffer, "."))
 			dsSignature := convertSignatureToRrsig(zone.Exit.Rrsig, uint16(zone.Exit.Rrtype), signerName)
 			dsRR := SerialDStoDSRR(zone.Exit.Ds_records, signerName)
-			fmt.Printf("Looking up key for %v\n", dsSignature.KeyTag)
 			err = dsSignature.Verify(keyLookupMap[dsSignature.KeyTag], dsRR)
-			if err == nil {
-				fmt.Printf("\tVerified DS Records delegated to %v\n", signerName)
-			} else {
+			if err != nil {
 				fmt.Printf("DS Verification err: %v\n", err)
 				return false, err
 			}
 		} else {
-			// This could be a final record.
-			resolvedRecords := zone.Exit.Rrs
-			rrType := zone.Exit.Rrtype
-			resolvedRecordSignature := convertSignatureToRrsig(zone.Exit.Rrsig, uint16(rrType), query)
-			fmt.Printf("Looking up Key %v\n", resolvedRecordSignature.KeyTag)
-			if _, ok := keyLookupMap[resolvedRecordSignature.KeyTag]; ok {
-				err := resolvedRecordSignature.Verify(keyLookupMap[resolvedRecordSignature.KeyTag], resolvedRecords)
-				if err == nil {
-					fmt.Printf("\t Verified %v Records successfully\n", rrType)
+			// This could be a final record. Check that it is.
+			if i == int(chain.Num_zones)-1 {
+				resolvedRecords := zone.Exit.Rrs
+				rrType := zone.Exit.Rrtype
+				resolvedRecordSignature := convertSignatureToRrsig(zone.Exit.Rrsig, uint16(rrType), query)
+				if _, ok := keyLookupMap[resolvedRecordSignature.KeyTag]; ok {
+					signingKey := keyLookupMap[resolvedRecordSignature.KeyTag]
+					if isParentTheSigner {
+						resolvedRecordSignature.SignerName = signerName
+					}
+					err := resolvedRecordSignature.Verify(signingKey, resolvedRecords)
+					if err != nil {
+						fmt.Printf("Failed to verify records\n")
+						return false, err
+					}
 				} else {
-					fmt.Printf("Failed to verify records\n")
+					fmt.Printf("Key not found!\n")
 					return false, err
 				}
-			} else {
-				fmt.Printf("Key not found!\n")
-				return false, err
+			}
+			// If it is not a final record but contains only the information of the next child segment in the chain
+			// It's likely that it is signed by the parent and needs to be verified.
+			if !isParentTheSigner {
+				isParentTheSigner = true
+				parentSignerIndex = i
 			}
 		}
 	}
