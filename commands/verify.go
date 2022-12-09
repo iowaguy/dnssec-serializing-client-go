@@ -67,7 +67,7 @@ func SerialDStoDSRR(dsRecords []dns.SerialDS, signerName string) []dns.RR {
 	return r
 }
 
-func verifyDNSSECProofChain(chain *dns.DNSSECProof, query string) (bool, error) {
+func verifyDNSSECProofChain(chain *dns.DNSSECProof, query string, anchor *TrustAnchor) (bool, error) {
 	// Split query into segments
 	segments := strings.Split(dns.Fqdn(query), ".")
 	numSegments := len(segments)
@@ -107,6 +107,34 @@ func verifyDNSSECProofChain(chain *dns.DNSSECProof, query string) (bool, error) 
 		if err != nil {
 			fmt.Printf("Verification err: %v\n", err)
 			return false, err
+		}
+		if signerName == "." {
+			// If this is the root, also verify the DS information of the keys from the DNSKEYs through Root Anchors
+			expectedRootDSRecords := anchor.ToDS()
+			foundRootDSRecords := make([]dns.DS, 0)
+			for _, key := range dnsKeys {
+				if key.Flags&(dns.SEP|dns.ZONE) != (dns.SEP | dns.ZONE) {
+					continue
+				}
+				ds := key.ToDS(dns.SHA256)
+				foundRootDSRecords = append(foundRootDSRecords, *ds)
+			}
+			if len(foundRootDSRecords) == len(expectedRootDSRecords) {
+				res := make(map[string]bool)
+				mismatch := false
+				for _, ds := range expectedRootDSRecords {
+					res[strings.ToLower(ds.Digest)] = true
+				}
+				for _, resolverReturnedDS := range foundRootDSRecords {
+					if _, ok := res[strings.ToLower(resolverReturnedDS.Digest)]; !ok {
+						mismatch = true
+					}
+				}
+				if mismatch {
+					fmt.Printf("Expected root values do not match root anchors.\n")
+					return false, errors.New("expected root values do not match root anchors\n")
+				}
+			}
 		}
 
 		if zone.Exit.Num_ds > 0 {
@@ -151,13 +179,13 @@ func verifyDNSSECProofChain(chain *dns.DNSSECProof, query string) (bool, error) 
 	return true, nil
 }
 
-func ValidateDNSSECSignature(msg *dns.Msg, query string) (bool, error) {
+func ValidateDNSSECSignature(msg *dns.Msg, query string, anchor *TrustAnchor) (bool, error) {
 	if len(msg.Extra) > 0 {
 		for _, proof := range msg.Extra {
 			r, ok := proof.(*dns.DNSSECProof)
 			if ok {
 				// Obtained a DNSSEC Serialized Proof for verification
-				return verifyDNSSECProofChain(r, query)
+				return verifyDNSSECProofChain(r, query, anchor)
 			}
 			// Fall through for glue records which have Additional Data but aren't DNSSEC proofs
 		}

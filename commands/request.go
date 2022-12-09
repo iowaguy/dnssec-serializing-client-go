@@ -50,6 +50,8 @@ func SerializedDNSSECQuery(c *cli.Context) error {
 	dnssec := c.Bool("dnssec")
 	dnsType := dnsQueryStringToType(dnsTypeString)
 
+	anchor := CheckAndValidateDNSRootAnchors()
+
 	dnsQuery := new(dns.Msg)
 	dnsQuery.SetQuestion(domainName, dnsType)
 	if dnssec {
@@ -72,7 +74,7 @@ func SerializedDNSSECQuery(c *cli.Context) error {
 	fmt.Printf("%v\n", response)
 
 	vStart := time.Now()
-	ok, err := ValidateDNSSECSignature(response, domainName)
+	ok, err := ValidateDNSSECSignature(response, domainName, &anchor)
 	if ok {
 		fmt.Printf("%v Verified DNSSEC Chain successfully. %v\n", "\033[32m", "\033[0m")
 	} else {
