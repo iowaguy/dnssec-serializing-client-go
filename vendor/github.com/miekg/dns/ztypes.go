@@ -9,17 +9,18 @@ import (
 
 // TypeToRR is a map of constructors for each RR type.
 var TypeToRR = map[uint16]func() RR{
-	TypeA:           func() RR { return new(A) },
-	TypeAAAA:        func() RR { return new(AAAA) },
-	TypeAFSDB:       func() RR { return new(AFSDB) },
-	TypeANY:         func() RR { return new(ANY) },
-	TypeAPL:         func() RR { return new(APL) },
-	TypeAVC:         func() RR { return new(AVC) },
-	TypeCAA:         func() RR { return new(CAA) },
-	TypeCDNSKEY:     func() RR { return new(CDNSKEY) },
-	TypeCDS:         func() RR { return new(CDS) },
-	TypeCERT:        func() RR { return new(CERT) },
-	TypeCNAME:       func() RR { return new(CNAME) },
+	TypeA:       func() RR { return new(A) },
+	TypeAAAA:    func() RR { return new(AAAA) },
+	TypeAFSDB:   func() RR { return new(AFSDB) },
+	TypeANY:     func() RR { return new(ANY) },
+	TypeAPL:     func() RR { return new(APL) },
+	TypeAVC:     func() RR { return new(AVC) },
+	TypeCAA:     func() RR { return new(CAA) },
+	TypeCDNSKEY: func() RR { return new(CDNSKEY) },
+	TypeCDS:     func() RR { return new(CDS) },
+	TypeCERT:    func() RR { return new(CERT) },
+	TypeCNAME:   func() RR { return new(CNAME) },
+	// TypeChain:       func() RR { return new(Chain) },
 	TypeCSYNC:       func() RR { return new(CSYNC) },
 	TypeDHCID:       func() RR { return new(DHCID) },
 	TypeDLV:         func() RR { return new(DLV) },
@@ -84,6 +85,8 @@ var TypeToRR = map[uint16]func() RR{
 	TypeX25:         func() RR { return new(X25) },
 	TypeZONEMD:      func() RR { return new(ZONEMD) },
 	TypeDNSSECProof: func() RR { return new(DNSSECProof) },
+	TypeChain:       func() RR { return new(Chain) },
+	TypeZone:        func() RR { return new(Zone) },
 }
 
 // TypeToString is a map of strings for each RR type.
@@ -102,6 +105,7 @@ var TypeToString = map[uint16]string{
 	TypeCERT:        "CERT",
 	TypeCNAME:       "CNAME",
 	TypeCSYNC:       "CSYNC",
+	TypeChain:       "Chain",
 	TypeDHCID:       "DHCID",
 	TypeDLV:         "DLV",
 	TypeDNAME:       "DNAME",
@@ -171,6 +175,7 @@ var TypeToString = map[uint16]string{
 	TypeURI:         "URI",
 	TypeX25:         "X25",
 	TypeZONEMD:      "ZONEMD",
+	TypeZone:        "Zone",
 	TypeNSAPPTR:     "NSAP-PTR",
 	TypeDNSSECProof: "DNSSECProof",
 }

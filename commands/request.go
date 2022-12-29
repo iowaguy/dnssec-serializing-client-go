@@ -1,8 +1,10 @@
 package commands
 
 import (
-	"encoding/base64"
+	"bytes"
 	"fmt"
+	"github.com/cloudflare/odoh-client-go/common"
+	"github.com/cloudflare/odoh-go"
 	"github.com/miekg/dns"
 	"github.com/urfave/cli"
 	"io/ioutil"
@@ -11,20 +13,16 @@ import (
 	"time"
 )
 
-func queryDNS(hostname string, serializedDnsQueryString []byte) (response *dns.Msg, err error) {
+func queryDNS(hostname string, serializedDnsQueryString []byte, contentType string, useODoH bool, odohQueryContext *odoh.QueryContext) (response *dns.Msg, err error) {
 	client := http.Client{}
-	queryUrl := buildDohURL(hostname).String()
+	queryUrl := common.BuildDohURL(hostname).String()
 	log.Printf("Querying %v\n", queryUrl)
-	req, err := http.NewRequest(http.MethodGet, queryUrl, nil)
+	req, err := http.NewRequest(http.MethodPost, queryUrl, bytes.NewBuffer(serializedDnsQueryString))
 	if err != nil {
 		log.Fatalln(err)
 	}
 
-	queries := req.URL.Query()
-	encodedString := base64.RawURLEncoding.EncodeToString(serializedDnsQueryString)
-	queries.Add("dns", encodedString)
-	req.Header.Set("Content-Type", DOH_CONTENT_TYPE)
-	req.URL.RawQuery = queries.Encode()
+	req.Header.Set("Content-Type", contentType)
 
 	resp, err := client.Do(req)
 	if err != nil {
@@ -38,7 +36,22 @@ func queryDNS(hostname string, serializedDnsQueryString []byte) (response *dns.M
 	if resp.StatusCode < 200 || resp.StatusCode > 299 {
 		log.Fatalf("Received non-2XX status code from %v: %v", hostname, string(bodyBytes))
 	}
-	dnsBytes, err := parseDnsResponse(bodyBytes)
+
+	// For ODoH do some pre-processing before passing it on
+	if useODoH {
+		// bodyBytes is encrypted response data which needs to be decrypted
+		obliviousDNSResponse, err := odoh.UnmarshalDNSMessage(bodyBytes)
+		if err != nil {
+			log.Fatal(err)
+		}
+		decryptedAnswerBytes, err := odohQueryContext.OpenAnswer(obliviousDNSResponse)
+		if err != nil {
+			log.Fatal(err)
+		}
+		bodyBytes = decryptedAnswerBytes
+	}
+
+	dnsBytes, err := common.ParseDnsResponse(bodyBytes)
 
 	return dnsBytes, nil
 }
@@ -48,7 +61,8 @@ func SerializedDNSSECQuery(c *cli.Context) error {
 	dnsTypeString := c.String("dnstype")
 	dnsTargetServer := c.String("target")
 	dnssec := c.Bool("dnssec")
-	dnsType := dnsQueryStringToType(dnsTypeString)
+	useODoH := c.Bool("odoh")
+	dnsType := common.DnsQueryStringToType(dnsTypeString)
 
 	anchor := CheckAndValidateDNSRootAnchors()
 
@@ -57,13 +71,30 @@ func SerializedDNSSECQuery(c *cli.Context) error {
 	if dnssec {
 		dnsQuery.SetEdns0(4096, true)
 	}
+
 	packedDnsQuery, err := dnsQuery.Pack()
 	if err != nil {
 		return err
 	}
+
+	contentType := common.DOH_CONTENT_TYPE
+	var odohQueryContext odoh.QueryContext
+	var odohMessageQuery odoh.ObliviousDNSMessage
+
+	if useODoH {
+		fmt.Printf("Retriveing ODoH Target configuration ...\n")
+		odohTargetConfig := RetrieveODoHConfig(dnsTargetServer)
+		odohQuery := odoh.CreateObliviousDNSQuery(packedDnsQuery, 0)
+		odohMessageQuery, odohQueryContext, err = odohTargetConfig.Contents.EncryptQuery(odohQuery)
+		if err != nil {
+			return err
+		}
+		packedDnsQuery = odohMessageQuery.Marshal()
+		contentType = common.ODOH_CONTENT_TYPE
+	}
 	start := time.Now()
 
-	response, err := queryDNS(dnsTargetServer, packedDnsQuery)
+	response, err := queryDNS(dnsTargetServer, packedDnsQuery, contentType, useODoH, &odohQueryContext)
 	if err != nil {
 		fmt.Println("Failed with a response here.")
 		return err

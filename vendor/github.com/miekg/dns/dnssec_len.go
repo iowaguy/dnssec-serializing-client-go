@@ -92,3 +92,64 @@ func (rr *Leaving) len(off int, compression map[string]struct{}) int {
 	}
 	return l
 }
+
+func (rr *Chain) len(off int, compression map[string]struct{}) int {
+	l := rr.Hdr.len(off, compression)
+	l += 1 // Version, uint8
+	l += 2 // InitialKeyTag, uint16
+	l += 1 // NumZones, uint8
+	for _, zone := range rr.Zones {
+		l += zone.len(off, compression)
+	}
+	return l
+}
+
+func (rr *Zone) len(off int, compression map[string]struct{}) int {
+	l := rr.Hdr.len(off, compression)
+	l += domainNameLen(string(rr.Name), off+l, compression, true)
+	l += domainNameLen(string(rr.PreviousName), off+l, compression, true)
+	l += 1 // ZSKIndex, uint8
+	l += 1 // NumKeys, uint8
+
+	// DNSKEYs
+	for _, key := range rr.Keys {
+		l += key.len(off, compression)
+	}
+
+	l += 1 // NumKeySigs, uint8
+
+	// RRSIGs
+	for _, sig := range rr.KeySigs {
+		l += sig.len(off, compression)
+	}
+
+	l += 1 // NumDS, uint8
+
+	// DSs
+	for _, ds := range rr.DSSet {
+		l += ds.len(off, compression)
+	}
+
+	l += 1 // NumDSSigs, uint8
+
+	// DSSigs
+	for _, dsSig := range rr.DSSigs {
+		l += dsSig.len(off, compression)
+	}
+
+	l += 1 // NumLeaves, uint8
+
+	// Leaves
+	for _, leaf := range rr.Leaves {
+		l += leaf.len(off, compression)
+	}
+
+	l += 1 // NumLeavesSigs, uint8
+
+	// LeavesSigs
+	for _, leafSig := range rr.LeavesSigs {
+		l += leafSig.len(off, compression)
+	}
+
+	return l
+}

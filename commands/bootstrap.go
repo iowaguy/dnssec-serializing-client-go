@@ -8,6 +8,7 @@ import (
 	"encoding/pem"
 	"errors"
 	"fmt"
+	"github.com/cloudflare/odoh-client-go/common"
 	"go.mozilla.org/pkcs7"
 	"io"
 	"log"
@@ -58,7 +59,7 @@ func ReadCheckSum(filePath string) map[string]string {
 
 	for scanner.Scan() {
 		line := scanner.Text()
-		elements := strings.Split(line, ChecksumDelimiter)
+		elements := strings.Split(line, common.ChecksumDelimiter)
 		res[strings.TrimSpace(elements[1])] = strings.TrimSpace(elements[0])
 	}
 
@@ -81,7 +82,7 @@ func CheckDownloadIntegrity(filePath string, providedCheckSumHex string) (string
 }
 
 func CheckAndValidateDNSRootAnchors() TrustAnchor {
-	directoryPath := RootAnchorsLocation
+	directoryPath := common.RootAnchorsLocation
 
 	// Create a directory for root anchors if it doesn't exist already.
 	if _, err := os.Stat(directoryPath); errors.Is(err, os.ErrNotExist) {
@@ -92,7 +93,7 @@ func CheckAndValidateDNSRootAnchors() TrustAnchor {
 	}
 
 	// Check for the filenames existence or fetch them as necessary.
-	rootAnchorsAndLocations := ReturnRootAnchorFileAndLocationInformation()
+	rootAnchorsAndLocations := common.ReturnRootAnchorFileAndLocationInformation()
 
 	for fileName, fetchLocation := range rootAnchorsAndLocations {
 		filePath := path.Join(directoryPath, fileName)
@@ -103,7 +104,7 @@ func CheckAndValidateDNSRootAnchors() TrustAnchor {
 
 	// Proceed with verification, previous state mutated to local location information.
 	_integrityTimerStart := time.Now()
-	fileChecksums := ReadCheckSum(path.Join(directoryPath, ChecksumFile))
+	fileChecksums := ReadCheckSum(path.Join(directoryPath, common.ChecksumFile))
 
 	for fileName, checkSumHexString := range fileChecksums {
 		filePath := path.Join(directoryPath, fileName)
@@ -117,25 +118,25 @@ func CheckAndValidateDNSRootAnchors() TrustAnchor {
 
 	// Downloaded files have the correct integrity, now proceed to verifying the signatures themselves in trust anchors.
 	_signatureVerificationStart := time.Now()
-	certPEMBytes, err := os.ReadFile(path.Join(directoryPath, ICANNBundleFile))
+	certPEMBytes, err := os.ReadFile(path.Join(directoryPath, common.ICANNBundleFile))
 	if err != nil {
-		log.Fatalf("unable to read %v file", ICANNBundleFile)
+		log.Fatalf("unable to read %v file", common.ICANNBundleFile)
 	}
 	certDERBytesBlock, _ := pem.Decode(certPEMBytes)
 	cert, err := x509.ParseCertificate(certDERBytesBlock.Bytes)
 	pool := x509.NewCertPool()
 	pool.AddCert(cert)
 
-	sigBytes, err := os.ReadFile(path.Join(directoryPath, RootAnchorSignatureFile))
+	sigBytes, err := os.ReadFile(path.Join(directoryPath, common.RootAnchorSignatureFile))
 	if err != nil {
-		log.Fatalf("unable to read %v file", RootAnchorSignatureFile)
+		log.Fatalf("unable to read %v file", common.RootAnchorSignatureFile)
 	}
 	p7, err := pkcs7.Parse(sigBytes)
 
 	// Retrieve the trust anchor and complete bootstrapping procedure
-	anchorsBytes, err := os.ReadFile(path.Join(directoryPath, RootAnchorsFile))
+	anchorsBytes, err := os.ReadFile(path.Join(directoryPath, common.RootAnchorsFile))
 	if err != nil {
-		log.Fatalf("unable to read %v file", RootAnchorsFile)
+		log.Fatalf("unable to read %v file", common.RootAnchorsFile)
 	}
 
 	p7.Content = anchorsBytes

@@ -124,3 +124,63 @@ func copyDataSerialDS(s *SerialDS) *SerialDS {
 		newDigest,
 	}
 }
+
+func (rr *Zone) copy() RR {
+	Keys := make([]DNSKEY, len(rr.Keys))
+	for i, e := range rr.Keys {
+		Keys[i] = *e.copy().(*DNSKEY)
+	}
+	KeySigs := make([]RRSIG, len(rr.KeySigs))
+	for i, e := range rr.KeySigs {
+		KeySigs[i] = *e.copy().(*RRSIG)
+	}
+	DSSet := make([]DS, len(rr.DSSet))
+	for i, e := range rr.DSSet {
+		DSSet[i] = *e.copy().(*DS)
+	}
+	DSSigs := make([]RRSIG, len(rr.DSSigs))
+	for i, e := range rr.DSSigs {
+		DSSigs[i] = *e.copy().(*RRSIG)
+	}
+	Leaves := make([]RR, len(rr.Leaves))
+	for i, e := range rr.Leaves {
+		Leaves[i] = e.copy().(RR)
+	}
+	LeavesSigs := make([]RRSIG, len(rr.LeavesSigs))
+	for i, e := range rr.LeavesSigs {
+		LeavesSigs[i] = *e.copy().(*RRSIG)
+	}
+
+	return &Zone{
+		Hdr:           rr.Hdr,
+		Name:          rr.Name,
+		PreviousName:  rr.PreviousName,
+		ZSKIndex:      rr.ZSKIndex,
+		NumKeys:       rr.NumKeys,
+		Keys:          Keys,
+		NumKeySigs:    rr.NumKeySigs,
+		KeySigs:       KeySigs,
+		NumDS:         rr.NumDS,
+		DSSet:         DSSet,
+		NumDSSigs:     rr.NumDSSigs,
+		DSSigs:        DSSigs,
+		NumLeaves:     rr.NumLeaves,
+		Leaves:        Leaves,
+		NumLeavesSigs: rr.NumLeavesSigs,
+		LeavesSigs:    LeavesSigs,
+	}
+}
+
+func (rr *Chain) copy() RR {
+	zones := make([]Zone, rr.NumZones)
+	for i, z := range rr.Zones {
+		zones[i] = *z.copy().(*Zone)
+	}
+	return &Chain{
+		Hdr:           rr.Hdr,
+		Version:       rr.Version,
+		InitialKeyTag: rr.InitialKeyTag,
+		NumZones:      rr.NumZones,
+		Zones:         zones,
+	}
+}
