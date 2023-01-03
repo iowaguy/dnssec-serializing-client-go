@@ -2,31 +2,34 @@ package commands
 
 import (
 	"github.com/cloudflare/odoh-client-go/benchmark"
-	"github.com/urfave/cli"
+	"github.com/urfave/cli/v2"
 )
 
-var Commands = []cli.Command{
+var Commands = []*cli.Command{
 	{
 		Name:   "query",
 		Usage:  "An application/dns-message request",
 		Action: SerializedDNSSECQuery,
 		Flags: []cli.Flag{
-			cli.StringFlag{
-				Name:  "domain, d",
-				Value: "www.cloudflare.com.",
+			&cli.StringFlag{
+				Name:    "domain",
+				Aliases: []string{"d"},
+				Value:   "www.cloudflare.com.",
 			},
-			cli.StringFlag{
-				Name:  "dnstype, t",
-				Value: "AAAA",
+			&cli.StringFlag{
+				Name:    "dnstype",
+				Aliases: []string{"t"},
+				Value:   "AAAA",
 			},
-			cli.StringFlag{
-				Name:  "target",
-				Value: "localhost:8080",
+			&cli.StringFlag{
+				Name:    "target",
+				Aliases: []string{"t"},
+				Value:   "localhost:8080",
 			},
-			cli.BoolFlag{
+			&cli.BoolFlag{
 				Name: "dnssec",
 			},
-			cli.BoolFlag{
+			&cli.BoolFlag{
 				Name: "odoh",
 			},
 		},
@@ -34,41 +37,44 @@ var Commands = []cli.Command{
 	{
 		Name:  "bench",
 		Usage: "Benchmark utility to run DNS queries using multiple protocols",
-		Subcommands: []cli.Command{
+		Subcommands: []*cli.Command{
 			{
 				Name:   "doh",
 				Usage:  "Run benchmarks with DoH queries to the resolver",
 				Action: benchmark.BenchmarkDoHWithDNSSEC,
 				Flags: []cli.Flag{
-					cli.StringFlag{
+					&cli.StringFlag{
 						Name:     "resolver",
 						Required: false,
 						Value:    "doh.cloudflare-dns.com",
 					},
-					cli.StringFlag{
-						Name:     "input, i",
+					&cli.StringFlag{
+						Name:     "input",
+						Aliases:  []string{"i"},
 						Required: true,
 					},
-					cli.StringFlag{
-						Name:     "output, o",
+					&cli.StringFlag{
+						Name:     "output",
+						Aliases:  []string{"o"},
 						Value:    "results",
 						Required: false,
 					},
-					cli.StringFlag{
-						Name:     "type, t",
+					&cli.StringFlag{
+						Name:     "type",
+						Aliases:  []string{"t"},
 						Value:    "A",
 						Required: false,
 						Usage:    "DNS String Query Type (A|AAAA|MX|etc..,)",
 					},
-					cli.IntFlag{
-						Name:     "rate, r",
-						Usage:    "The number of requests to send to the resolver",
+					&cli.IntFlag{
+						Name:     "rate",
+						Aliases:  []string{"r"},
+						Usage:    "The number of requests to send to the resolver in parallel in a batch",
 						Required: false,
 						Value:    10,
 					},
-					cli.BoolFlag{
-						Name:     "transport-secure",
-						Required: false,
+					&cli.BoolFlag{
+						Name: "dnssec",
 					},
 				},
 			},
@@ -77,26 +83,50 @@ var Commands = []cli.Command{
 				Usage:  "Run benchmark with Do53 queries to the resolver",
 				Action: benchmark.BenchmarkDo53WithDNSSEC,
 				Flags: []cli.Flag{
-					cli.StringFlag{
-						Name:     "input, i",
+					&cli.StringFlag{
+						Name:     "input",
+						Aliases:  []string{"i"},
 						Required: true,
 					},
-					cli.StringFlag{
-						Name:     "output, o",
+					&cli.StringFlag{
+						Name:     "output",
+						Aliases:  []string{"o"},
 						Value:    "results",
 						Required: false,
 					},
-					cli.IntFlag{
-						Name:     "rate, r",
+					&cli.IntFlag{
+						Name:     "rate",
+						Aliases:  []string{"r"},
 						Usage:    "The number of requests to send to the resolver",
 						Required: false,
 						Value:    10,
 					},
-					cli.StringFlag{
-						Name:     "type, t",
+					&cli.StringFlag{
+						Name:     "type",
+						Aliases:  []string{"t"},
 						Value:    "A",
 						Required: false,
 						Usage:    "DNS String Query Type (A|AAAA|MX|etc..,)",
+					},
+					&cli.StringFlag{
+						Name:     "resolver",
+						Required: true,
+						Usage:    "Enter the hostname or IP address of the resolver",
+					},
+					&cli.IntFlag{
+						Name:     "port",
+						Value:    53,
+						Required: false,
+						Usage:    "Enter the port number to connect to.",
+					},
+					&cli.BoolFlag{
+						Name: "dnssec",
+					},
+					&cli.BoolFlag{
+						Name: "udp",
+					},
+					&cli.BoolFlag{
+						Name: "tcp",
 					},
 				},
 			},
@@ -105,40 +135,43 @@ var Commands = []cli.Command{
 				Usage:  "Run benchmarks with ODoH queries to the resolver",
 				Action: benchmark.BenchmarkODoHWithDNSSEC,
 				Flags: []cli.Flag{
-					cli.StringFlag{
-						Name:     "input, i",
+					&cli.StringFlag{
+						Name:     "input",
+						Aliases:  []string{"i"},
 						Required: true,
 					},
-					cli.StringFlag{
-						Name:     "output, o",
+					&cli.StringFlag{
+						Name:     "output",
+						Aliases:  []string{"o"},
 						Value:    "results",
 						Required: false,
 					},
-					cli.IntFlag{
-						Name:     "rate, r",
+					&cli.IntFlag{
+						Name:     "rate",
+						Aliases:  []string{"r"},
 						Usage:    "The number of requests to send to the resolver",
 						Required: false,
 						Value:    10,
 					},
-					cli.StringFlag{
-						Name:     "type, t",
+					&cli.StringFlag{
+						Name:     "type",
+						Aliases:  []string{"t"},
 						Value:    "A",
 						Required: false,
 						Usage:    "DNS String Query Type (A|AAAA|MX|etc..,)",
 					},
-					cli.BoolFlag{
-						Name:     "transport-secure",
-						Required: false,
-					},
-					cli.StringFlag{
+					&cli.StringFlag{
 						Name:     "target",
 						Required: false,
 						Value:    "odoh.cloudflare-dns.com",
 					},
-					cli.StringFlag{
-						Name:     "proxy",
+					&cli.StringFlag{
+						Name:     "proxy", // TODO: Yet to integrate.
 						Required: true,
 						Usage:    "The hostname of the proxy to route the Oblivious DoH queries through",
+					},
+					&cli.BoolFlag{
+						Name: "dnssec",
 					},
 				},
 			},

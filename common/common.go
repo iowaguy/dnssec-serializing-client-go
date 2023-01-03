@@ -1,5 +1,7 @@
 package common
 
+import "time"
+
 const (
 	DOH_CONTENT_TYPE  = "application/dns-message"
 	ODOH_CONTENT_TYPE = "application/oblivious-dns-message"
@@ -31,4 +33,14 @@ func ReturnRootAnchorFileAndLocationInformation() map[string]string {
 	res[ChecksumFile] = IANAChecksums
 	res[RootAnchorSignatureFile] = IANARootAnchorsSignature
 	return res
+}
+
+type Reporting struct {
+	StartTime               time.Time
+	EndTime                 time.Time
+	NetworkTime             time.Duration
+	DecryptionTime          *time.Duration
+	QuerySizeBytesOnWire    int
+	ResponseSizeBytesOnWire int
+	ResponseSizeBytes       int
 }

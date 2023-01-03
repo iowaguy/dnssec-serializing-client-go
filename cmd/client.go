@@ -2,12 +2,12 @@ package main
 
 import (
 	"fmt"
+	"github.com/urfave/cli/v2"
 	"log"
 	"os"
 	"time"
 
 	"github.com/cloudflare/odoh-client-go/commands"
-	"github.com/urfave/cli"
 )
 
 var (

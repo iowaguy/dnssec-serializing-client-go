@@ -1,60 +1,16 @@
 package commands
 
 import (
-	"bytes"
 	"fmt"
+	"github.com/cloudflare/odoh-client-go/bootstrap"
 	"github.com/cloudflare/odoh-client-go/common"
+	"github.com/cloudflare/odoh-client-go/network"
+	"github.com/cloudflare/odoh-client-go/verification"
 	"github.com/cloudflare/odoh-go"
 	"github.com/miekg/dns"
-	"github.com/urfave/cli"
-	"io/ioutil"
-	"log"
-	"net/http"
+	"github.com/urfave/cli/v2"
 	"time"
 )
-
-func queryDNS(hostname string, serializedDnsQueryString []byte, contentType string, useODoH bool, odohQueryContext *odoh.QueryContext) (response *dns.Msg, err error) {
-	client := http.Client{}
-	queryUrl := common.BuildDohURL(hostname).String()
-	log.Printf("Querying %v\n", queryUrl)
-	req, err := http.NewRequest(http.MethodPost, queryUrl, bytes.NewBuffer(serializedDnsQueryString))
-	if err != nil {
-		log.Fatalln(err)
-	}
-
-	req.Header.Set("Content-Type", contentType)
-
-	resp, err := client.Do(req)
-	if err != nil {
-		log.Fatalln(err)
-	}
-
-	bodyBytes, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		log.Fatal(err)
-	}
-	if resp.StatusCode < 200 || resp.StatusCode > 299 {
-		log.Fatalf("Received non-2XX status code from %v: %v", hostname, string(bodyBytes))
-	}
-
-	// For ODoH do some pre-processing before passing it on
-	if useODoH {
-		// bodyBytes is encrypted response data which needs to be decrypted
-		obliviousDNSResponse, err := odoh.UnmarshalDNSMessage(bodyBytes)
-		if err != nil {
-			log.Fatal(err)
-		}
-		decryptedAnswerBytes, err := odohQueryContext.OpenAnswer(obliviousDNSResponse)
-		if err != nil {
-			log.Fatal(err)
-		}
-		bodyBytes = decryptedAnswerBytes
-	}
-
-	dnsBytes, err := common.ParseDnsResponse(bodyBytes)
-
-	return dnsBytes, nil
-}
 
 func SerializedDNSSECQuery(c *cli.Context) error {
 	domainName := dns.Fqdn(c.String("domain"))
@@ -64,7 +20,7 @@ func SerializedDNSSECQuery(c *cli.Context) error {
 	useODoH := c.Bool("odoh")
 	dnsType := common.DnsQueryStringToType(dnsTypeString)
 
-	anchor := CheckAndValidateDNSRootAnchors()
+	anchor := bootstrap.CheckAndValidateDNSRootAnchors()
 
 	dnsQuery := new(dns.Msg)
 	dnsQuery.SetQuestion(domainName, dnsType)
@@ -83,7 +39,7 @@ func SerializedDNSSECQuery(c *cli.Context) error {
 
 	if useODoH {
 		fmt.Printf("Retriveing ODoH Target configuration ...\n")
-		odohTargetConfig := RetrieveODoHConfig(dnsTargetServer)
+		odohTargetConfig := network.RetrieveODoHConfig(dnsTargetServer)
 		odohQuery := odoh.CreateObliviousDNSQuery(packedDnsQuery, 0)
 		odohMessageQuery, odohQueryContext, err = odohTargetConfig.Contents.EncryptQuery(odohQuery)
 		if err != nil {
@@ -94,7 +50,7 @@ func SerializedDNSSECQuery(c *cli.Context) error {
 	}
 	start := time.Now()
 
-	response, err := queryDNS(dnsTargetServer, packedDnsQuery, contentType, useODoH, &odohQueryContext)
+	response, _, err := network.QueryDNS(dnsTargetServer, packedDnsQuery, contentType, useODoH, &odohQueryContext)
 	if err != nil {
 		fmt.Println("Failed with a response here.")
 		return err
@@ -105,7 +61,7 @@ func SerializedDNSSECQuery(c *cli.Context) error {
 	fmt.Printf("%v\n", response)
 
 	vStart := time.Now()
-	ok, err := ValidateDNSSECSignature(response, domainName, &anchor)
+	ok, err := verification.ValidateDNSSECSignature(response, domainName, &anchor)
 	if ok {
 		fmt.Printf("%v Verified DNSSEC Chain successfully. %v\n", "\033[32m", "\033[0m")
 	} else {
