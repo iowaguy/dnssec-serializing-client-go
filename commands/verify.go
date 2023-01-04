@@ -315,7 +315,9 @@ func verifyDNSSECProofChain(chain *dns.Chain, target string, anchor *TrustAnchor
 			return false, errors.New(fmt.Sprintf("the signature of zone %s's keys could not be verified", currentZone.Name))
 		} else {
 			// add the ZSKs of the current zone to the trust store, the KSKs are already in there
-			trustedKeys[currentZone.Name] = zsks
+			for _, zsk := range zsks {
+				trustedKeys[currentZone.Name] = append(trustedKeys[currentZone.Name], zsk)
+			}
 		}
 
 		if !isZSK(&currentZone.Keys[currentZone.ZSKIndex]) {
@@ -349,7 +351,7 @@ func verifyDNSSECProofChain(chain *dns.Chain, target string, anchor *TrustAnchor
 					} else {
 						return false, errors.New(fmt.Sprintf("a non-leaf zone %s contains a CNAME", currentZone.Name))
 					}
-					visited.push(currentZone)
+					visited = visited.push(currentZone)
 					break
 				case *dns.DNAME:
 					// replace the portion of target matching current_zone.name with dname.target
@@ -375,6 +377,8 @@ func verifyDNSSECProofChain(chain *dns.Chain, target string, anchor *TrustAnchor
 			if !hasCNAME && currentZone.Name.String() == target {
 				return true, nil
 			}
+		} else {
+			visited = visited.push(currentZone)
 		}
 	}
 

@@ -9,6 +9,12 @@ clean:
 	@echo "Cleaning and removing the client ..."
 	@rm -f client
 
+debugbuild: clean
+	@echo "Building the binary for client ..."
+	@echo "Tag: $(COMMIT_ID)"
+	@echo "Version: $(VERSION)"
+	go build -gcflags 'all=-N -l' -ldflags "-X main.Version=$(VERSION) -X main.CommitId=$(COMMIT_ID)" ./cmd/*
+
 build: clean
 	@echo "Building the binary for client ..."
 	@echo "Tag: $(COMMIT_ID)"
