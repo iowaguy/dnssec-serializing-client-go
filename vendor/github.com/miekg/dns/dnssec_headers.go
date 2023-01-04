@@ -9,3 +9,5 @@ func (rr *Entering) Header() *RR_Header    { return &RR_Header{} }
 func (rr *SerialDS) Header() *RR_Header    { return &RR_Header{} }
 func (rr *RRType) Header() *RR_Header      { return &RR_Header{} }
 func (rr *Leaving) Header() *RR_Header     { return &RR_Header{} }
+func (rr *Zone) Header() *RR_Header        { return &rr.Hdr }
+func (rr *Chain) Header() *RR_Header       { return &rr.Hdr }

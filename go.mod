@@ -20,3 +20,5 @@ require (
 )
 
 replace github.com/miekg/dns v1.1.50 => ../dns
+
+// replace github.com/miekg/dns v1.1.50 => github.com/iowaguy/dns v1.1.50-restructure.5

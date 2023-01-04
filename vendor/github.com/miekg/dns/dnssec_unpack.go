@@ -1,5 +1,164 @@
 package dns
 
+import "errors"
+
+func (rr *Chain) unpack(msg []byte, off int) (off1 int, err error) {
+	rdStart := off
+	_ = rdStart
+
+	rr.Version, off, err = unpackUint8(msg, off)
+	if err != nil {
+		return off, err
+	}
+	rr.InitialKeyTag, off, err = unpackUint16(msg, off)
+	if err != nil {
+		return off, err
+	}
+	rr.NumZones, off, err = unpackUint8(msg, off)
+	if err != nil {
+		return off, err
+	}
+	rr.Zones = make([]Zone, rr.NumZones)
+	for i := 0; i < int(rr.NumZones); i++ {
+		var r RR
+		r, off, err = UnpackRR(msg, off)
+		if err != nil {
+			return off, err
+		}
+		v, ok := r.(*Zone)
+		if !ok {
+			return off, errors.New("expected ZONE, received something else")
+		}
+		rr.Zones[i] = *v
+	}
+	return off, nil
+}
+
+func (rr *Zone) unpack(msg []byte, off int) (off1 int, err error) {
+	rdStart := off
+	_ = rdStart
+
+	tmpName, off, err := UnpackDomainName(msg, off)
+	if err != nil {
+		return off, err
+	}
+	rr.Name = Name(tmpName)
+
+	tmpName, off, err = UnpackDomainName(msg, off)
+	if err != nil {
+		return off, err
+	}
+	rr.PreviousName = Name(tmpName)
+
+	rr.ZSKIndex, off, err = unpackUint8(msg, off)
+	if err != nil {
+		return off, err
+	}
+	rr.NumKeys, off, err = unpackUint8(msg, off)
+	if err != nil {
+		return off, err
+	}
+
+	rr.Keys = make([]DNSKEY, rr.NumKeys)
+	for i := 0; i < int(rr.NumKeys); i++ {
+		var r RR
+		r, off, err = UnpackRR(msg, off)
+		if err != nil {
+			return off, err
+		}
+		v, ok := r.(*DNSKEY)
+		if !ok {
+			return off, errors.New("expected DNSKEY, received something else")
+		}
+		rr.Keys[i] = *v
+	}
+
+	rr.NumKeySigs, off, err = unpackUint8(msg, off)
+	if err != nil {
+		return off, err
+	}
+
+	rr.KeySigs = make([]RRSIG, rr.NumKeySigs)
+	for i := 0; i < int(rr.NumKeySigs); i++ {
+		var r RR
+		r, off, err = UnpackRR(msg, off)
+		if err != nil {
+			return off, err
+		}
+		v, ok := r.(*RRSIG)
+		if !ok {
+			return off, errors.New("expected RRSIG, received something else")
+		}
+		rr.KeySigs[i] = *v
+	}
+
+	rr.NumDS, off, err = unpackUint8(msg, off)
+	if err != nil {
+		return off, err
+	}
+	rr.DSSet = make([]DS, rr.NumDS)
+	for i := 0; i < int(rr.NumDS); i++ {
+		var r RR
+		r, off, err = UnpackRR(msg, off)
+		if err != nil {
+			return off, err
+		}
+		v, ok := r.(*DS)
+		if !ok {
+			return off, errors.New("expected DS, received something else")
+		}
+		rr.DSSet[i] = *v
+	}
+	rr.NumDSSigs, off, err = unpackUint8(msg, off)
+	if err != nil {
+		return off, err
+	}
+	rr.DSSigs = make([]RRSIG, rr.NumDSSigs)
+	for i := 0; i < int(rr.NumDSSigs); i++ {
+		var r RR
+		r, off, err = UnpackRR(msg, off)
+		if err != nil {
+			return off, err
+		}
+		v, ok := r.(*RRSIG)
+		if !ok {
+			return off, errors.New("expected RRSIG, received something else")
+		}
+		rr.DSSigs[i] = *v
+	}
+
+	rr.NumLeaves, off, err = unpackUint8(msg, off)
+	if err != nil {
+		return off, err
+	}
+	rr.Leaves = make([]RR, rr.NumLeaves)
+	for i := 0; i < int(rr.NumLeaves); i++ {
+		rr.Leaves[i], off, err = UnpackRR(msg, off)
+		if err != nil {
+			return off, err
+		}
+	}
+	rr.NumLeavesSigs, off, err = unpackUint8(msg, off)
+	if err != nil {
+		return off, err
+	}
+	rr.LeavesSigs = make([]RRSIG, rr.NumLeavesSigs)
+	for i := 0; i < int(rr.NumLeavesSigs); i++ {
+		var r RR
+		r, off, err = UnpackRR(msg, off)
+		if err != nil {
+			return off, err
+		}
+		v, ok := r.(*RRSIG)
+		if !ok {
+			return off, errors.New("expected RRSIG, received something else")
+		}
+		rr.LeavesSigs[i] = *v
+	}
+
+	return off, nil
+}
+
 func (rr *Signature) unpack(msg []byte, off int) (off1 int, err error) {
 	rdStart := off
 	_ = rdStart

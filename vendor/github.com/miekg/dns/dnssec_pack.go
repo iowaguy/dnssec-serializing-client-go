@@ -1,5 +1,104 @@
 package dns
 
+func (rr *Chain) pack(msg []byte, off int, compression compressionMap, compress bool) (off1 int, err error) {
+	off, err = packUint8(rr.Version, msg, off)
+	if err != nil {
+		return off, err
+	}
+	off, err = packUint16(rr.InitialKeyTag, msg, off)
+	if err != nil {
+		return off, err
+	}
+	off, err = packUint8(rr.NumZones, msg, off)
+	if err != nil {
+		return off, err
+	}
+	for _, zone := range rr.Zones {
+		off, err = PackRR(&zone, msg, off, compression.ext, compress)
+		if err != nil {
+			return off, err
+		}
+	}
+	return off, nil
+}
+
+func (rr *Zone) pack(msg []byte, off int, compression compressionMap, compress bool) (off1 int, err error) {
+	off, err = packDomainName(string(rr.Name), msg, off, compression, compress)
+	if err != nil {
+		return off, err
+	}
+	off, err = packDomainName(string(rr.PreviousName), msg, off, compression, compress)
+	if err != nil {
+		return off, err
+	}
+	off, err = packUint8(rr.ZSKIndex, msg, off)
+	if err != nil {
+		return off, err
+	}
+	off, err = packUint8(rr.NumKeys, msg, off)
+	if err != nil {
+		return off, err
+	}
+	for _, key := range rr.Keys {
+		off, err = PackRR(&key, msg, off, compression.ext, compress)
+		if err != nil {
+			return off, err
+		}
+	}
+	off, err = packUint8(rr.NumKeySigs, msg, off)
+	if err != nil {
+		return off, err
+	}
+	for _, sig := range rr.KeySigs {
+		off, err = PackRR(&sig, msg, off, compression.ext, compress)
+		if err != nil {
+			return off, err
+		}
+	}
+	off, err = packUint8(rr.NumDS, msg, off)
+	if err != nil {
+		return off, err
+	}
+	for _, ds := range rr.DSSet {
+		off, err = PackRR(&ds, msg, off, compression.ext, compress)
+		if err != nil {
+			return off, err
+		}
+	}
+	off, err = packUint8(rr.NumDSSigs, msg, off)
+	if err != nil {
+		return off, err
+	}
+	for _, dsSig := range rr.DSSigs {
+		off, err = PackRR(&dsSig, msg, off, compression.ext, compress)
+		if err != nil {
+			return off, err
+		}
+	}
+	off, err = packUint8(rr.NumLeaves, msg, off)
+	if err != nil {
+		return off, err
+	}
+	for _, leaf := range rr.Leaves {
+		off, err = PackRR(leaf, msg, off, compression.ext, compress)
+		if err != nil {
+			return off, err
+		}
+	}
+	off, err = packUint8(rr.NumLeavesSigs, msg, off)
+	if err != nil {
+		return off, err
+	}
+	for _, leafSig := range rr.LeavesSigs {
+		off, err = PackRR(&leafSig, msg, off, compression.ext, compress)
+		if err != nil {
+			return off, err
+		}
+	}
+
+	return off, nil
+}
+
 func (rr *ZonePair) pack(msg []byte, off int, compression compressionMap, compress bool) (off1 int, err error) {
 	return packDataZonePair(rr, msg, off, compression, compress)
 }
