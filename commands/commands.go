@@ -18,7 +18,7 @@ var Commands = []*cli.Command{
 			},
 			&cli.StringFlag{
 				Name:    "dnstype",
-				Aliases: []string{"t"},
+				Aliases: []string{"p"},
 				Value:   "AAAA",
 			},
 			&cli.StringFlag{

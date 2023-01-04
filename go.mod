@@ -26,4 +26,6 @@ require (
 	golang.org/x/xerrors v0.0.0-20200804184101-5ec99f83aff1 // indirect
 )
 
-replace github.com/miekg/dns v1.1.50 => ../dns
+replace github.com/miekg/dns v1.1.50 => github.com/iowaguy/dns v1.1.50-restructure.6
+
+// replace github.com/miekg/dns v1.1.50 => ../dns
