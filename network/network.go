@@ -17,7 +17,6 @@ func QueryDNS(hostname string, serializedDnsQueryString []byte, contentType stri
 
 	client := http.Client{}
 	queryUrl := common.BuildDohURL(hostname).String()
-	log.Printf("Querying %v\n", queryUrl)
 
 	report.QuerySizeBytesOnWire = len(serializedDnsQueryString)
 

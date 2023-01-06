@@ -67,6 +67,10 @@ func bench(protocol string, serializedQueries map[BenchQuery][]byte, odohQueryCo
 				useODoH,
 				queryContext)
 
+			if resp == nil {
+				resp = new(dns.Msg)
+			}
+
 			verificationStartTime := time.Now()
 
 			validity, _ := verification.ValidateDNSSECSignature(resp, query.Query, &anchor)
@@ -146,6 +150,10 @@ func benchDO53(connectionProtocolType string, serializedQueries map[BenchQuery]*
 			nwStart := time.Now()
 			resp, _, _ := c.Exchange(serializedQuery, connectionString)
 			nwEnd := time.Now()
+
+			if resp == nil {
+				resp = new(dns.Msg)
+			}
 
 			vsStart := time.Now()
 			validity, _ := verification.ValidateDNSSECSignature(resp, query.Query, &anchor)

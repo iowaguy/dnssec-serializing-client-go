@@ -46,75 +46,6 @@ func (s zoneStack) String() string {
 	return builder.String()
 }
 
-func convertSignatureToRrsig(signature dns.Signature, signatureTypeCovered uint16, signerName string) dns.RRSIG {
-	headerSignerName := signerName
-	if signatureTypeCovered == dns.TypeDS {
-		fqdnSegments := strings.Split(signerName, ".")
-		signerName = dns.Fqdn(strings.Join(fqdnSegments[1:], "."))
-	}
-	r := dns.RRSIG{
-		Hdr: dns.RR_Header{
-			Rrtype:   dns.TypeRRSIG,
-			Class:    dns.ClassINET,
-			Ttl:      signature.Ttl,
-			Rdlength: signature.Length,
-			Name:     headerSignerName,
-		},
-		TypeCovered: signatureTypeCovered,
-		Algorithm:   signature.Algorithm,
-		Labels:      signature.Labels,
-		OrigTtl:     signature.Ttl,
-		Expiration:  signature.Expires,
-		Inception:   signature.Begins,
-		KeyTag:      signature.Key_tag,
-		SignerName:  signerName,
-		Signature:   string(signature.Signature),
-	}
-	//fmt.Printf("Signature: %v\n", r.String())
-	return r
-}
-
-func DNSKEYsToRR(keys []dns.DNSKEY) []dns.RR {
-	r := make([]dns.RR, 0)
-	for _, k := range keys {
-		rr, err := dns.NewRR(k.String())
-		if err != nil {
-			fmt.Println("Failed to create RR from DNSKEY.")
-		}
-		r = append(r, rr)
-	}
-	return r
-}
-
-func SerialDStoDSRR(dsRecords []dns.SerialDS, signerName string) []dns.RR {
-	r := make([]dns.RR, 0)
-	for _, dsRecord := range dsRecords {
-		record := new(dns.DS)
-		record.Algorithm = dsRecord.Algorithm
-		record.KeyTag = dsRecord.Key_tag
-		record.Digest = string(dsRecord.Digest)
-		record.DigestType = dsRecord.Digest_type
-		record.Hdr.Rrtype = dns.TypeDS
-		record.Hdr.Class = dns.ClassINET
-		record.Hdr.Name = signerName
-		RRValue, err := dns.NewRR(record.String())
-		if err != nil {
-			fmt.Println("Failed to convert DS entry to RR")
-		}
-		r = append(r, RRValue)
-	}
-	return r
-}
-
-// Assume that the zones are returned in order
-func getRoot(chain *dns.Chain) (*dns.Zone, error) {
-	if len(chain.Zones) == 0 {
-		return nil, errors.New(fmt.Sprintf("no zones included in proof chain."))
-	}
-
-	return &chain.Zones[0], nil
-}
-
 func isRoot(zone *dns.Zone) bool {
 	if zone == nil {
 		return false
@@ -135,8 +66,10 @@ func areKSKsTrusted(dnsKeys []*dns.DNSKEY, dsSet []dns.DS) (bool, error) {
 		if !isKSK(key) {
 			continue
 		}
-		ds := key.ToDS(dns.SHA256)
-		calculatedDSRecords = append(calculatedDSRecords, *ds)
+		ds := key.ToDS(key.Protocol)
+		if ds != nil {
+			calculatedDSRecords = append(calculatedDSRecords, *ds)
+		}
 	}
 	if len(calculatedDSRecords) == len(dsSet) {
 		res := make(map[string]bool)
@@ -250,7 +183,7 @@ func verifyDNSSECProofChain(chain *dns.Chain, target string, anchor *bootstrap.T
 		_, parentZSKs := separateKeyTypes(trustedKeys[currentZone.PreviousName])
 
 		// This block is for handling the case where a child zone is signed by its parent's key.
-		// We know that a zone did not use it's own keys if it has no DS records.
+		// We know that a zone did not use its own keys if it has no DS records.
 		if !isRoot(&currentZone) && len(currentZone.DSSet) == 0 {
 			// If the current_zone has no delegations and is not the root, but has a
 			// non-empty set of KSKs, fail.
@@ -264,7 +197,7 @@ func verifyDNSSECProofChain(chain *dns.Chain, target string, anchor *bootstrap.T
 			}
 
 			for _, leafSig := range currentZone.LeavesSigs {
-				// If the current zone does not have it's own keys, we must have seen
+				// If the current zone does not have its own keys, we must have seen
 				// the keys when we traversed SignerName already.
 				if _, ok := trustedKeys[dns.Name(leafSig.SignerName)]; !ok {
 					return false, errors.New(fmt.Sprintf("If there are no keys and no delegations, we should have seen the SignerName's (%s) key already.", leafSig.SignerName))
@@ -321,7 +254,7 @@ func verifyDNSSECProofChain(chain *dns.Chain, target string, anchor *bootstrap.T
 			}
 		}
 
-		if !isZSK(&currentZone.Keys[currentZone.ZSKIndex]) {
+		if len(currentZone.Keys) == 0 || !isZSK(&currentZone.Keys[currentZone.ZSKIndex]) {
 			return false, errors.New(fmt.Sprintf("ZSK index of zone %s does not point to a ZSK", currentZone.Name))
 		}
 
