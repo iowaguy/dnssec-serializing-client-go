@@ -3,6 +3,7 @@ module github.com/cloudflare/odoh-client-go
 go 1.18
 
 require (
+	github.com/allegro/bigcache/v3 v3.1.0
 	github.com/cloudflare/odoh-go v1.0.0
 	github.com/miekg/dns v1.1.50
 	github.com/urfave/cli/v2 v2.23.7

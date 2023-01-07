@@ -1,6 +1,10 @@
 # git.schwanenlied.me/yawning/x448.git v0.0.0-20170617130356-01b048fb03d6
 ## explicit
 git.schwanenlied.me/yawning/x448.git
+# github.com/allegro/bigcache/v3 v3.1.0
+## explicit; go 1.16
+github.com/allegro/bigcache/v3
+github.com/allegro/bigcache/v3/queue
 # github.com/cisco/go-hpke v0.0.0-20210215210317-01c430f1f302
 ## explicit; go 1.14
 github.com/cisco/go-hpke

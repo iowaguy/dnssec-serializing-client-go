@@ -1,5 +1,7 @@
 git.schwanenlied.me/yawning/x448.git v0.0.0-20170617130356-01b048fb03d6 h1:w8IZgCntCe0RuBJp+dENSMwEBl/k8saTgJ5hPca5IWw=
 git.schwanenlied.me/yawning/x448.git v0.0.0-20170617130356-01b048fb03d6/go.mod h1:wQaGCqEu44ykB17jZHCevrgSVl3KJnwQBObUtrKU4uU=
+github.com/allegro/bigcache/v3 v3.1.0 h1:H2Vp8VOvxcrB91o86fUSVJFqeuz8kpyyB02eH3bSzwk=
+github.com/allegro/bigcache/v3 v3.1.0/go.mod h1:aPyh7jEvrog9zAwx5N7+JUQX5dZTSGpxF1LAR4dr35I=
 github.com/cisco/go-hpke v0.0.0-20210215210317-01c430f1f302 h1:unAbn7dpE8eeUfWRaOPl1qTfffhIcCNuKQuECGNGWtk=
 github.com/cisco/go-hpke v0.0.0-20210215210317-01c430f1f302/go.mod h1:RSsoIHRMBe69FbF/fIbmWYa3rrC6vuPyC0MbNUpel3Q=
 github.com/cisco/go-tls-syntax v0.0.0-20200617162716-46b0cfb76b9b h1:Ves2turKTX7zruivAcUOQg155xggcbv3suVdbKCBQNM=

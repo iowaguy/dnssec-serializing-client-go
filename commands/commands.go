@@ -128,6 +128,9 @@ var Commands = []*cli.Command{
 					&cli.BoolFlag{
 						Name: "tcp",
 					},
+					&cli.BoolFlag{
+						Name: "trace",
+					},
 				},
 			},
 			{

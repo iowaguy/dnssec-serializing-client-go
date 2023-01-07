@@ -12,6 +12,12 @@ import (
 )
 
 func BenchmarkDo53WithDNSSEC(c *cli.Context) error {
+	clientRecurse := c.Bool("trace")
+
+	if clientRecurse {
+		return BenchmarkDo53WithClientRecursion(c)
+	}
+	
 	inputFile := c.String("input")
 	outputDir := c.String("output")
 	requestRate := c.Int("rate")
