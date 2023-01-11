@@ -46,7 +46,7 @@ func QueryDNS(hostname string, serializedDnsQueryString []byte, contentType stri
 		log.Fatal(err)
 	}
 	if resp.StatusCode < 200 || resp.StatusCode > 299 {
-		log.Fatalf("Received non-2XX status code from %v: %v", hostname, string(bodyBytes))
+		log.Printf("Received non-2XX status code from %v: %v", hostname, string(bodyBytes))
 	}
 
 	// For ODoH do some pre-processing before passing it on
