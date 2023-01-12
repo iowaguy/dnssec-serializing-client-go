@@ -121,8 +121,11 @@ func separateKeyTypes(keys []*dns.DNSKEY) (ksks []*dns.DNSKEY, zsks []*dns.DNSKE
 func checkSigs(sigs []dns.RRSIG, keys []*dns.DNSKEY, rrs []dns.RR) bool {
 	for _, sig := range sigs {
 		sigVerified := false
+		var keyFound bool
 		for _, key := range keys {
+			keyFound = false
 			if key.KeyTag() == sig.KeyTag {
+				keyFound = true
 				err := sig.Verify(key, rrs)
 				if err == nil {
 					sigVerified = true
@@ -131,6 +134,10 @@ func checkSigs(sigs []dns.RRSIG, keys []*dns.DNSKEY, rrs []dns.RR) bool {
 			}
 		}
 		if !sigVerified {
+			if !keyFound {
+				// could be deprecated older key, no security concern with the signature here as long as one passes.
+				return true
+			}
 			// this means none of the keys could verify this signature
 			return false
 		}
