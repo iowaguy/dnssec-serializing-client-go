@@ -9,11 +9,12 @@ import (
 	"github.com/cloudflare/odoh-go"
 	"github.com/miekg/dns"
 	"github.com/urfave/cli/v2"
+	"golang.org/x/net/idna"
 	"time"
 )
 
 func SerializedDNSSECQuery(c *cli.Context) error {
-	domainName := dns.Fqdn(c.String("domain"))
+	domainNameString := dns.Fqdn(c.String("domain"))
 	dnsTypeString := c.String("dnstype")
 	dnsTargetServer := c.String("target")
 	dnssec := c.Bool("dnssec")
@@ -21,6 +22,8 @@ func SerializedDNSSECQuery(c *cli.Context) error {
 	dnsType := common.DnsQueryStringToType(dnsTypeString)
 
 	anchor := bootstrap.CheckAndValidateDNSRootAnchors()
+
+	domainName, _ := idna.ToASCII(domainNameString)
 
 	dnsQuery := new(dns.Msg)
 	dnsQuery.SetQuestion(domainName, dnsType)

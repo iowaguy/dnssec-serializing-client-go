@@ -1,6 +1,7 @@
 package benchmark
 
 import (
+	"golang.org/x/net/idna"
 	"strconv"
 	"time"
 )
@@ -50,8 +51,10 @@ func TelemetryHeader() []string {
 func (t *Telemetry) Serialize() []string {
 	res := make([]string, 0)
 
+	queryUnicode, _ := idna.ToUnicode(t.Query)
+
 	res = append(res, t.Protocol)
-	res = append(res, t.Query)
+	res = append(res, queryUnicode)
 	res = append(res, strconv.FormatUint(uint64(t.QueryType), 10))
 	res = append(res, strconv.FormatBool(t.VerificationStatus))
 	res = append(res, t.NetworkTime.String())

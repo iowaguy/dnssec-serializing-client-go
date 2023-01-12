@@ -9,6 +9,7 @@ import (
 	"github.com/cloudflare/odoh-client-go/verification"
 	"github.com/cloudflare/odoh-go"
 	"github.com/miekg/dns"
+	"golang.org/x/net/idna"
 	"golang.org/x/sync/semaphore"
 	"log"
 	"os"
@@ -19,8 +20,12 @@ import (
 )
 
 func PrepareDNSQuery(hostname string, queryType uint16, dnssec bool) *dns.Msg {
+	domainName, err := idna.ToASCII(hostname)
+	if err != nil {
+		log.Printf("Unable to encode hostname %v to ASCII.", hostname)
+	}
 	dnsQuery := new(dns.Msg)
-	dnsQuery.SetQuestion(dns.Fqdn(hostname), queryType)
+	dnsQuery.SetQuestion(dns.Fqdn(domainName), queryType)
 	if dnssec {
 		dnsQuery.SetEdns0(4096, true)
 	}
