@@ -12,6 +12,7 @@ import (
 	"golang.org/x/net/idna"
 	"golang.org/x/sync/semaphore"
 	"log"
+	"net/url"
 	"os"
 	"strings"
 	"sync"
@@ -32,7 +33,7 @@ func PrepareDNSQuery(hostname string, queryType uint16, dnssec bool) *dns.Msg {
 	return dnsQuery
 }
 
-func bench(protocol string, serializedQueries map[BenchQuery][]byte, odohQueryContext map[BenchQuery]*odoh.QueryContext, resolverHostname string, parallelism int, anchor bootstrap.TrustAnchor, outFile string) error {
+func bench(protocol string, serializedQueries map[BenchQuery][]byte, odohQueryContext map[BenchQuery]*odoh.QueryContext, resolverHostname string, parallelism int, anchor bootstrap.TrustAnchor, proxyURL *url.URL, outFile string) error {
 
 	f, err := os.OpenFile(outFile, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
@@ -70,7 +71,8 @@ func bench(protocol string, serializedQueries map[BenchQuery][]byte, odohQueryCo
 				serializedQuery,
 				contentType,
 				useODoH,
-				queryContext)
+				queryContext,
+				proxyURL)
 
 			if resp == nil {
 				resp = new(dns.Msg)

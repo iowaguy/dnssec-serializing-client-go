@@ -32,6 +32,10 @@ var Commands = []*cli.Command{
 			&cli.BoolFlag{
 				Name: "odoh",
 			},
+			&cli.StringFlag{
+				Name:  "proxy",
+				Usage: "Hostname of the proxy server to use to send the odoh query to",
+			},
 		},
 	},
 	{
@@ -169,7 +173,7 @@ var Commands = []*cli.Command{
 						Value:    "odoh.cloudflare-dns.com",
 					},
 					&cli.StringFlag{
-						Name:     "proxy", // TODO: Yet to integrate.
+						Name:     "proxy",
 						Required: true,
 						Usage:    "The hostname of the proxy to route the Oblivious DoH queries through",
 					},

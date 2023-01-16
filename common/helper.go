@@ -40,3 +40,17 @@ func buildURL(s, defaultPath string) *url.URL {
 func BuildDohURL(s string) *url.URL {
 	return buildURL(s, DOH_DEFAULT_PATH)
 }
+
+func BuildODoHURL(proxy string, target string) *url.URL {
+	p := buildURL(proxy, PROXY_DEFAULT_PATH)
+	t := buildURL(target, DOH_DEFAULT_PATH)
+	query := p.Query()
+	if query.Get("targethost") == "" {
+		query.Set("targethost", t.Host)
+	}
+	if query.Get("targetpath") == "" {
+		query.Set("targetpath", t.Path)
+	}
+	p.RawQuery = query.Encode()
+	return p
+}

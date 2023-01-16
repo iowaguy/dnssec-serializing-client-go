@@ -8,15 +8,21 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"net/url"
 	"time"
 )
 
-func QueryDNS(hostname string, serializedDnsQueryString []byte, contentType string, useODoH bool, odohQueryContext *odoh.QueryContext) (response *dns.Msg, r *common.Reporting, err error) {
+func QueryDNS(hostname string, serializedDnsQueryString []byte, contentType string, useODoH bool, odohQueryContext *odoh.QueryContext, proxyHostname *url.URL) (response *dns.Msg, r *common.Reporting, err error) {
 
 	report := common.Reporting{}
 
 	client := http.Client{}
-	queryUrl := common.BuildDohURL(hostname).String()
+	var queryUrl string
+	if useODoH && proxyHostname != nil {
+		queryUrl = proxyHostname.String()
+	} else {
+		queryUrl = common.BuildDohURL(hostname).String()
+	}
 
 	report.QuerySizeBytesOnWire = len(serializedDnsQueryString)
 

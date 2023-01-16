@@ -10,6 +10,7 @@ import (
 	"github.com/miekg/dns"
 	"github.com/urfave/cli/v2"
 	"golang.org/x/net/idna"
+	"net/url"
 	"time"
 )
 
@@ -19,6 +20,8 @@ func SerializedDNSSECQuery(c *cli.Context) error {
 	dnsTargetServer := c.String("target")
 	dnssec := c.Bool("dnssec")
 	useODoH := c.Bool("odoh")
+	proxyHostname := c.String("proxy")
+
 	dnsType := common.DnsQueryStringToType(dnsTypeString)
 
 	anchor := bootstrap.CheckAndValidateDNSRootAnchors()
@@ -39,10 +42,17 @@ func SerializedDNSSECQuery(c *cli.Context) error {
 	contentType := common.DOH_CONTENT_TYPE
 	var odohQueryContext odoh.QueryContext
 	var odohMessageQuery odoh.ObliviousDNSMessage
+	var proxyURL *url.URL
 
 	if useODoH {
 		fmt.Printf("Retriveing ODoH Target configuration ...\n")
 		odohTargetConfig := network.RetrieveODoHConfig(dnsTargetServer)
+
+		if proxyHostname != "" {
+			// Make the query instead to a proxy
+			proxyURL = common.BuildODoHURL(proxyHostname, dnsTargetServer)
+		}
+
 		odohQuery := odoh.CreateObliviousDNSQuery(packedDnsQuery, 0)
 		odohMessageQuery, odohQueryContext, err = odohTargetConfig.Contents.EncryptQuery(odohQuery)
 		if err != nil {
@@ -53,7 +63,7 @@ func SerializedDNSSECQuery(c *cli.Context) error {
 	}
 	start := time.Now()
 
-	response, _, err := network.QueryDNS(dnsTargetServer, packedDnsQuery, contentType, useODoH, &odohQueryContext)
+	response, _, err := network.QueryDNS(dnsTargetServer, packedDnsQuery, contentType, useODoH, &odohQueryContext, proxyURL)
 	if err != nil {
 		fmt.Println("Failed with a response here.")
 		return err

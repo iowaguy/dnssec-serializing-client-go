@@ -16,7 +16,7 @@ func BenchmarkODoHWithDNSSEC(c *cli.Context) error {
 	requestRate := c.Int("rate")
 	dnsTypeString := c.String("type")
 	odohTargetHostname := c.String("target")
-	//odohProxyHostname := c.String("proxy")
+	odohProxyHostname := c.String("proxy")
 	dnssec := c.Bool("dnssec")
 
 	outputPath := fmt.Sprintf("%v/results-%v-DO-proof-%v-%v.csv", outputDir, "ODoH", dnssec, time.Now().UnixNano())
@@ -30,6 +30,8 @@ func BenchmarkODoHWithDNSSEC(c *cli.Context) error {
 	odohQueryContextMap := make(map[BenchQuery]*odoh.QueryContext, 0)
 
 	odohTargetConfig := network.RetrieveODoHConfig(odohTargetHostname)
+
+	proxyURL := common.BuildODoHURL(odohProxyHostname, odohTargetHostname)
 
 	for _, q := range queries {
 		dnsQ := PrepareDNSQuery(q, dnsType, dnssec)
@@ -55,5 +57,5 @@ func BenchmarkODoHWithDNSSEC(c *cli.Context) error {
 		serializedQueryMap[benchQ] = packedDnsQuery
 	}
 
-	return bench("ODoH", serializedQueryMap, odohQueryContextMap, odohTargetHostname, requestRate, anchor, outputPath)
+	return bench("ODoH", serializedQueryMap, odohQueryContextMap, odohTargetHostname, requestRate, anchor, proxyURL, outputPath)
 }

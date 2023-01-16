@@ -3,9 +3,10 @@ package common
 import "time"
 
 const (
-	DOH_CONTENT_TYPE  = "application/dns-message"
-	ODOH_CONTENT_TYPE = "application/oblivious-dns-message"
-	DOH_DEFAULT_PATH  = "/dns-query"
+	DOH_CONTENT_TYPE   = "application/dns-message"
+	ODOH_CONTENT_TYPE  = "application/oblivious-dns-message"
+	DOH_DEFAULT_PATH   = "/dns-query"
+	PROXY_DEFAULT_PATH = "/proxy"
 )
 
 // IANA DNS Root Anchor Information

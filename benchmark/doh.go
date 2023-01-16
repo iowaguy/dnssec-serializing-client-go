@@ -39,5 +39,5 @@ func BenchmarkDoHWithDNSSEC(c *cli.Context) error {
 		serializedQueryMap[benchQ] = serQ
 	}
 
-	return bench("DoH", serializedQueryMap, nil, resolverHostname, requestRate, anchor, outputPath)
+	return bench("DoH", serializedQueryMap, nil, resolverHostname, requestRate, anchor, nil, outputPath)
 }
