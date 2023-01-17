@@ -57,5 +57,5 @@ func BenchmarkODoHWithDNSSEC(c *cli.Context) error {
 		serializedQueryMap[benchQ] = packedDnsQuery
 	}
 
-	return bench("ODoH", serializedQueryMap, odohQueryContextMap, odohTargetHostname, requestRate, anchor, proxyURL, outputPath)
+	return bench("ODoH", serializedQueryMap, odohQueryContextMap, odohTargetHostname, requestRate, anchor, proxyURL, false, outputPath)
 }

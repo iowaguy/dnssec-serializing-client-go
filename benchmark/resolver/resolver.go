@@ -14,6 +14,7 @@ type resolver interface {
 }
 
 type Resolver struct {
+	Protocol   string
 	Nameserver string
 	Timeout    time.Duration
 	Cache      *bigcache.BigCache
@@ -49,7 +50,7 @@ performNetworking:
 	}
 	connection := new(dns.Conn)
 
-	if connection.Conn, err = net.DialTimeout("tcp", c.Nameserver, 2000*time.Millisecond); err != nil {
+	if connection.Conn, err = net.DialTimeout(c.Protocol, c.Nameserver, 2000*time.Millisecond); err != nil {
 		return nil, fmt.Errorf("failed starting resolver connection")
 	}
 

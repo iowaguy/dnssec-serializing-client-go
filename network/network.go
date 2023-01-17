@@ -12,11 +12,18 @@ import (
 	"time"
 )
 
-func QueryDNS(hostname string, serializedDnsQueryString []byte, contentType string, useODoH bool, odohQueryContext *odoh.QueryContext, proxyHostname *url.URL) (response *dns.Msg, r *common.Reporting, err error) {
+func QueryDNS(hostname string, serializedDnsQueryString []byte, contentType string, useODoH bool, odohQueryContext *odoh.QueryContext, proxyHostname *url.URL, isSocks5 bool) (response *dns.Msg, r *common.Reporting, err error) {
 
 	report := common.Reporting{}
 
 	client := http.Client{}
+
+	if isSocks5 {
+		client.Transport = &http.Transport{
+			Proxy: http.ProxyURL(proxyHostname),
+		}
+	}
+
 	var queryUrl string
 	if useODoH && proxyHostname != nil {
 		queryUrl = proxyHostname.String()

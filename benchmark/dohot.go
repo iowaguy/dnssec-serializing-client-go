@@ -5,23 +5,30 @@ import (
 	"github.com/cloudflare/odoh-client-go/bootstrap"
 	"github.com/cloudflare/odoh-client-go/common"
 	"github.com/urfave/cli/v2"
+	"net/url"
+	"strings"
 	"time"
 )
 
-func BenchmarkDoHWithDNSSEC(c *cli.Context) error {
+func BenchmarkDoHoTWithDNSSEC(c *cli.Context) error {
 	inputFile := c.String("input")
 	outputDir := c.String("output")
 	requestRate := c.Int("rate")
 	dnsTypeString := c.String("type")
-	resolverHostname := c.String("resolver")
+	resolverHostname := c.String("target")
 	dnssec := c.Bool("dnssec")
+	socks5proxyHostName := c.String("socks5")
 
-	outputPath := fmt.Sprintf("%v/results-%v-DO-proof-%v-%v.csv", outputDir, "DoH", dnssec, time.Now().UnixNano())
+	if !strings.HasPrefix(socks5proxyHostName, "socks5://") {
+		socks5proxyHostName = fmt.Sprintf("socks5://%v", socks5proxyHostName)
+	}
+	socks5proxy, _ := url.Parse(socks5proxyHostName)
+
+	outputPath := fmt.Sprintf("%v/results-%v-DO-proof-%v-%v.csv", outputDir, "DoHoT", dnssec, time.Now().UnixNano())
 
 	anchor := bootstrap.CheckAndValidateDNSRootAnchors()
 
 	dnsType := common.DnsQueryStringToType(dnsTypeString)
-
 	CheckIfDirectoryExistsOrCreate(outputDir)
 	queries := ReadInputQueryList(inputFile)
 	fmt.Printf("Number of queries: %v\n", len(queries))
@@ -39,5 +46,5 @@ func BenchmarkDoHWithDNSSEC(c *cli.Context) error {
 		serializedQueryMap[benchQ] = serQ
 	}
 
-	return bench("DoH", serializedQueryMap, nil, resolverHostname, requestRate, anchor, nil, false, outputPath)
+	return bench("DoHoT", serializedQueryMap, nil, resolverHostname, requestRate, anchor, socks5proxy, true, outputPath)
 }

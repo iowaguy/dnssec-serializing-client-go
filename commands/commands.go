@@ -182,6 +182,51 @@ var Commands = []*cli.Command{
 					},
 				},
 			},
+			{
+				Name:   "dohot",
+				Usage:  "Run benchmarks with DoH queries over a Tor network",
+				Action: benchmark.BenchmarkDoHoTWithDNSSEC,
+				Flags: []cli.Flag{
+					&cli.StringFlag{
+						Name:     "input",
+						Aliases:  []string{"i"},
+						Required: true,
+					},
+					&cli.StringFlag{
+						Name:     "socks5",
+						Value:    "localhost:9050",
+						Required: false,
+					},
+					&cli.StringFlag{
+						Name:     "output",
+						Aliases:  []string{"o"},
+						Value:    "results",
+						Required: false,
+					},
+					&cli.IntFlag{
+						Name:     "rate",
+						Aliases:  []string{"r"},
+						Usage:    "The number of requests to send to the resolver",
+						Required: false,
+						Value:    10,
+					},
+					&cli.StringFlag{
+						Name:     "type",
+						Aliases:  []string{"t"},
+						Value:    "A",
+						Required: false,
+						Usage:    "DNS String Query Type (A|AAAA|MX|etc..,)",
+					},
+					&cli.StringFlag{
+						Name:     "target",
+						Required: false,
+						Value:    "doh.cloudflare-dns.com",
+					},
+					&cli.BoolFlag{
+						Name: "dnssec",
+					},
+				},
+			},
 		},
 	},
 }

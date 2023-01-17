@@ -63,7 +63,15 @@ func SerializedDNSSECQuery(c *cli.Context) error {
 	}
 	start := time.Now()
 
-	response, _, err := network.QueryDNS(dnsTargetServer, packedDnsQuery, contentType, useODoH, &odohQueryContext, proxyURL)
+	response, _, err := network.QueryDNS(
+		dnsTargetServer,
+		packedDnsQuery,
+		contentType,
+		useODoH,
+		&odohQueryContext,
+		proxyURL,
+		false)
+
 	if err != nil {
 		fmt.Println("Failed with a response here.")
 		return err

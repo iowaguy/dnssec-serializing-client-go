@@ -88,7 +88,6 @@ func ResolveQueryWithResolver(q *dns.Msg, r resolver) ([]byte, int, int, error) 
 		querySizeBytesOnWire += query.Len()
 		res, resolverErr := r.resolve(query)
 		if resolverErr != nil {
-			log.Printf("failed to receive response ...\n")
 			continue
 		}
 		responseSizeBytesOnWire += res.Len()

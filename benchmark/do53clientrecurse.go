@@ -23,6 +23,7 @@ import (
 func benchDo53ClientActions(connectionProtocolType string, serializedQueries map[BenchQuery]*dns.Msg, connectionString string, parallelism int, anchor bootstrap.TrustAnchor, outFile string) error {
 	cache, err := bigcache.New(context.Background(), bigcache.DefaultConfig(24*time.Hour))
 	resolverInUse := &resolver.Resolver{
+		Protocol:   connectionProtocolType,
 		Timeout:    2500 * time.Second,
 		Nameserver: connectionString,
 		Cache:      cache,
