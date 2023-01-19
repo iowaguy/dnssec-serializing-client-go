@@ -1,9 +1,11 @@
 package benchmark
 
 import (
-	"golang.org/x/net/idna"
 	"strconv"
+	"strings"
 	"time"
+
+	"golang.org/x/net/idna"
 )
 
 type BenchQuery struct {
@@ -24,6 +26,7 @@ type Telemetry struct {
 	QuerySizeBytesOnWire    int
 	ResponseSizeBytesOnWire int
 	DNSResponseSizeBytes    int
+	KeyTypes                []string
 
 	// For ODoH
 	EncryptionTime time.Duration
@@ -42,6 +45,7 @@ func TelemetryHeader() []string {
 	header = append(header, "QuerySizeOnWire")
 	header = append(header, "ResponseSizeOnWire")
 	header = append(header, "ResponseSize")
+	header = append(header, "KeyTypes")
 	header = append(header, "EncryptionTime")
 	header = append(header, "DecryptionTime")
 
@@ -62,6 +66,18 @@ func (t *Telemetry) Serialize() []string {
 	res = append(res, strconv.FormatInt(int64(t.QuerySizeBytesOnWire), 10))
 	res = append(res, strconv.FormatInt(int64(t.ResponseSizeBytesOnWire), 10))
 	res = append(res, strconv.FormatInt(int64(t.DNSResponseSizeBytes), 10))
+
+	var keyTypes strings.Builder
+	for i, keyType := range t.KeyTypes {
+		// append a separator
+		if i != 0 {
+			keyTypes.WriteString("/")
+		}
+
+		keyTypes.WriteString(keyType)
+	}
+	res = append(res, keyTypes.String())
+
 	res = append(res, t.EncryptionTime.String())
 	res = append(res, t.DecryptionTime.String())
 

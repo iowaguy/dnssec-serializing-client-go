@@ -30,6 +30,8 @@ github.com/miekg/dns
 # github.com/russross/blackfriday/v2 v2.1.0
 ## explicit
 github.com/russross/blackfriday/v2
+# github.com/stretchr/testify v1.7.0
+## explicit; go 1.13
 # github.com/urfave/cli/v2 v2.23.7
 ## explicit; go 1.18
 github.com/urfave/cli/v2
