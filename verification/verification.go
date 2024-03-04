@@ -97,6 +97,7 @@ func isZSK(key *dns.DNSKEY) bool {
 // Check if the provided key is a key-signing key
 func isKSK(key *dns.DNSKEY) bool {
 	// is Secure Entry Point
+	// is Secure Entry Point
 	isSEP := int(key.Flags)&dns.SEP == dns.SEP
 
 	return isZSK(key) && isSEP
@@ -261,8 +262,34 @@ func verifyDNSSECProofChain(chain *dns.Chain, target string, anchor *bootstrap.T
 			}
 		}
 
-		if len(currentZone.Keys) == 0 || !isZSK(&currentZone.Keys[currentZone.ZSKIndex]) {
-			return false, errors.New(fmt.Sprintf("ZSK index of zone %s does not point to a ZSK", currentZone.Name))
+		nsecFound := false
+		if len(currentZone.Leaves) > 0 {
+			leaves := currentZone.Leaves
+			for _, leaf := range leaves {
+				if leaf.Header().Rrtype == dns.TypeNSEC || leaf.Header().Rrtype == dns.TypeNSEC3 {
+					if leaf.Header().Rrtype == dns.TypeNSEC {
+						nsecData := leaf.(*dns.NSEC)
+						currentDomain := leaf.Header().Name
+						nextDomain := nsecData.NextDomain
+						isCurrAfterNext := strings.Compare(nextDomain, currentDomain)
+						if isCurrAfterNext > 0 {
+							// Black lies: https://blog.cloudflare.com/black-lies
+							return false, errors.New("DNSSEC NSEC is incorrect.")
+						}
+					}
+					if leaf.Header().Rrtype == dns.TypeNSEC3 {
+						_ = leaf.(*dns.NSEC3)
+						// TODO: Fall through for now. This needs NSEC3PARAM validation and comparing hashes.
+					}
+					nsecFound = true
+				}
+			}
+		}
+
+		if !nsecFound {
+			if len(currentZone.Keys) == 0 || !isZSK(&currentZone.Keys[currentZone.ZSKIndex]) {
+				return false, errors.New(fmt.Sprintf("ZSK index of zone %s does not point to a ZSK", currentZone.Name))
+			}
 		}
 
 		if len(currentZone.Leaves) > 0 {
